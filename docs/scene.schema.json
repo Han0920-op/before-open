@@ -1,0 +1,657 @@
+{
+  "$defs": {
+    "DemandScenario": {
+      "additionalProperties": false,
+      "properties": {
+        "scenario_label": {
+          "minLength": 1,
+          "title": "Scenario Label",
+          "type": "string"
+        },
+        "demand_qty": {
+          "$ref": "#/$defs/SourceField_Annotated_int__FieldInfo_annotation_NoneType__required_True__metadata__Strict_strict_True___Ge_ge_0___Le_le_1000000_____"
+        }
+      },
+      "required": [
+        "scenario_label",
+        "demand_qty"
+      ],
+      "title": "DemandScenario",
+      "type": "object"
+    },
+    "DurableScene": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "currency": {
+          "const": "CNY",
+          "default": "CNY",
+          "title": "Currency",
+          "type": "string"
+        },
+        "title": {
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "original_idea": {
+          "minLength": 1,
+          "title": "Original Idea",
+          "type": "string"
+        },
+        "location": {
+          "$ref": "#/$defs/LocationSpec"
+        },
+        "period_note": {
+          "minLength": 1,
+          "title": "Period Note",
+          "type": "string"
+        },
+        "unknowns": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Unknowns",
+          "type": "array"
+        },
+        "fields": {
+          "$ref": "#/$defs/RetailFields"
+        },
+        "demand_scenarios": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/DemandScenario"
+          },
+          "title": "Demand Scenarios",
+          "type": "array"
+        },
+        "business_type": {
+          "const": "retail_durable",
+          "title": "Business Type",
+          "type": "string"
+        },
+        "simulation_model_version": {
+          "const": "retail-durable-v1",
+          "title": "Simulation Model Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "original_idea",
+        "location",
+        "period_note",
+        "fields",
+        "business_type",
+        "simulation_model_version"
+      ],
+      "title": "DurableScene",
+      "type": "object"
+    },
+    "ExternalEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "source_url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Source Url",
+          "type": "string"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "scope": {
+          "minLength": 1,
+          "title": "Scope",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_url",
+        "observed_at",
+        "scope"
+      ],
+      "title": "ExternalEvidence",
+      "type": "object"
+    },
+    "LocationSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "location_type": {
+          "minLength": 1,
+          "title": "Location Type",
+          "type": "string"
+        },
+        "description": {
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "source": {
+          "default": "unknown",
+          "enum": [
+            "user_input",
+            "demo_assumption",
+            "verified_external",
+            "derived",
+            "user_observation",
+            "unknown"
+          ],
+          "title": "Source",
+          "type": "string"
+        },
+        "verified": {
+          "default": false,
+          "title": "Verified",
+          "type": "boolean"
+        },
+        "evidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExternalEvidence"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "observation_id": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Observation Id"
+        },
+        "derived_from": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Derived From",
+          "type": "array"
+        }
+      },
+      "required": [
+        "location_type",
+        "description"
+      ],
+      "title": "LocationSpec",
+      "type": "object"
+    },
+    "PerishableScene": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "currency": {
+          "const": "CNY",
+          "default": "CNY",
+          "title": "Currency",
+          "type": "string"
+        },
+        "title": {
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "original_idea": {
+          "minLength": 1,
+          "title": "Original Idea",
+          "type": "string"
+        },
+        "location": {
+          "$ref": "#/$defs/LocationSpec"
+        },
+        "period_note": {
+          "minLength": 1,
+          "title": "Period Note",
+          "type": "string"
+        },
+        "unknowns": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Unknowns",
+          "type": "array"
+        },
+        "fields": {
+          "$ref": "#/$defs/RetailFields"
+        },
+        "demand_scenarios": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/DemandScenario"
+          },
+          "title": "Demand Scenarios",
+          "type": "array"
+        },
+        "business_type": {
+          "const": "retail_perishable",
+          "title": "Business Type",
+          "type": "string"
+        },
+        "simulation_model_version": {
+          "const": "retail-perishable-v1",
+          "title": "Simulation Model Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "original_idea",
+        "location",
+        "period_note",
+        "fields",
+        "business_type",
+        "simulation_model_version"
+      ],
+      "title": "PerishableScene",
+      "type": "object"
+    },
+    "RetailFields": {
+      "additionalProperties": false,
+      "properties": {
+        "budget_cents": {
+          "$ref": "#/$defs/SourceField_Annotated_int__FieldInfo_annotation_NoneType__required_True__metadata__Strict_strict_True___Ge_ge_0___Le_le_1000000000_____"
+        },
+        "unit_price_cents": {
+          "$ref": "#/$defs/SourceField_Annotated_int__FieldInfo_annotation_NoneType__required_True__metadata__Strict_strict_True___Ge_ge_0___Le_le_1000000000_____"
+        },
+        "unit_cost_cents": {
+          "$ref": "#/$defs/SourceField_Annotated_int__FieldInfo_annotation_NoneType__required_True__metadata__Strict_strict_True___Ge_ge_0___Le_le_1000000000_____"
+        },
+        "stock_qty": {
+          "$ref": "#/$defs/SourceField_Annotated_int__FieldInfo_annotation_NoneType__required_True__metadata__Strict_strict_True___Ge_ge_0___Le_le_1000000_____"
+        },
+        "fixed_cost_cents": {
+          "$ref": "#/$defs/SourceField_Annotated_int__FieldInfo_annotation_NoneType__required_True__metadata__Strict_strict_True___Ge_ge_0___Le_le_1000000000_____"
+        }
+      },
+      "required": [
+        "budget_cents",
+        "unit_price_cents",
+        "unit_cost_cents",
+        "stock_qty",
+        "fixed_cost_cents"
+      ],
+      "title": "RetailFields",
+      "type": "object"
+    },
+    "ServiceFields": {
+      "additionalProperties": false,
+      "properties": {
+        "unit_price_cents": {
+          "$ref": "#/$defs/SourceField_Annotated_int__FieldInfo_annotation_NoneType__required_True__metadata__Strict_strict_True___Ge_ge_0___Le_le_1000000000_____"
+        },
+        "unit_cost_cents": {
+          "$ref": "#/$defs/SourceField_Annotated_int__FieldInfo_annotation_NoneType__required_True__metadata__Strict_strict_True___Ge_ge_0___Le_le_1000000000_____"
+        },
+        "minutes_per_job": {
+          "$ref": "#/$defs/SourceField_Annotated_int__FieldInfo_annotation_NoneType__required_True__metadata__Strict_strict_True___Ge_ge_1___Le_le_1000000_____"
+        },
+        "available_minutes": {
+          "$ref": "#/$defs/SourceField_Annotated_int__FieldInfo_annotation_NoneType__required_True__metadata__Strict_strict_True___Ge_ge_0___Le_le_1000000_____"
+        },
+        "booked": {
+          "$ref": "#/$defs/SourceField_Annotated_int__FieldInfo_annotation_NoneType__required_True__metadata__Strict_strict_True___Ge_ge_0___Le_le_1000000_____"
+        },
+        "cancelled": {
+          "$ref": "#/$defs/SourceField_Annotated_int__FieldInfo_annotation_NoneType__required_True__metadata__Strict_strict_True___Ge_ge_0___Le_le_1000000_____"
+        },
+        "fixed_cost_cents": {
+          "$ref": "#/$defs/SourceField_Annotated_int__FieldInfo_annotation_NoneType__required_True__metadata__Strict_strict_True___Ge_ge_0___Le_le_1000000000_____"
+        }
+      },
+      "required": [
+        "unit_price_cents",
+        "unit_cost_cents",
+        "minutes_per_job",
+        "available_minutes",
+        "booked",
+        "cancelled",
+        "fixed_cost_cents"
+      ],
+      "title": "ServiceFields",
+      "type": "object"
+    },
+    "ServiceScene": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "currency": {
+          "const": "CNY",
+          "default": "CNY",
+          "title": "Currency",
+          "type": "string"
+        },
+        "title": {
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "original_idea": {
+          "minLength": 1,
+          "title": "Original Idea",
+          "type": "string"
+        },
+        "location": {
+          "$ref": "#/$defs/LocationSpec"
+        },
+        "period_note": {
+          "minLength": 1,
+          "title": "Period Note",
+          "type": "string"
+        },
+        "unknowns": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Unknowns",
+          "type": "array"
+        },
+        "business_type": {
+          "const": "appointment_service",
+          "title": "Business Type",
+          "type": "string"
+        },
+        "simulation_model_version": {
+          "const": "service-v1",
+          "title": "Simulation Model Version",
+          "type": "string"
+        },
+        "fields": {
+          "$ref": "#/$defs/ServiceFields"
+        },
+        "demand_scenarios": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/DemandScenario"
+          },
+          "maxItems": 0,
+          "title": "Demand Scenarios",
+          "type": "array"
+        }
+      },
+      "required": [
+        "title",
+        "original_idea",
+        "location",
+        "period_note",
+        "business_type",
+        "simulation_model_version",
+        "fields"
+      ],
+      "title": "ServiceScene",
+      "type": "object"
+    },
+    "SourceField_Annotated_int__FieldInfo_annotation_NoneType__required_True__metadata__Strict_strict_True___Ge_ge_0___Le_le_1000000000_____": {
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "anyOf": [
+            {
+              "maximum": 1000000000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        },
+        "source": {
+          "enum": [
+            "user_input",
+            "demo_assumption",
+            "verified_external",
+            "derived",
+            "user_observation",
+            "unknown"
+          ],
+          "title": "Source",
+          "type": "string"
+        },
+        "note": {
+          "default": "",
+          "title": "Note",
+          "type": "string"
+        },
+        "evidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExternalEvidence"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "observation_id": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Observation Id"
+        },
+        "derived_from": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Derived From",
+          "type": "array"
+        }
+      },
+      "required": [
+        "value",
+        "source"
+      ],
+      "title": "SourceField[Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=0), Le(le=1000000000)])]]",
+      "type": "object"
+    },
+    "SourceField_Annotated_int__FieldInfo_annotation_NoneType__required_True__metadata__Strict_strict_True___Ge_ge_0___Le_le_1000000_____": {
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "anyOf": [
+            {
+              "maximum": 1000000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        },
+        "source": {
+          "enum": [
+            "user_input",
+            "demo_assumption",
+            "verified_external",
+            "derived",
+            "user_observation",
+            "unknown"
+          ],
+          "title": "Source",
+          "type": "string"
+        },
+        "note": {
+          "default": "",
+          "title": "Note",
+          "type": "string"
+        },
+        "evidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExternalEvidence"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "observation_id": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Observation Id"
+        },
+        "derived_from": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Derived From",
+          "type": "array"
+        }
+      },
+      "required": [
+        "value",
+        "source"
+      ],
+      "title": "SourceField[Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=0), Le(le=1000000)])]]",
+      "type": "object"
+    },
+    "SourceField_Annotated_int__FieldInfo_annotation_NoneType__required_True__metadata__Strict_strict_True___Ge_ge_1___Le_le_1000000_____": {
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "anyOf": [
+            {
+              "maximum": 1000000,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        },
+        "source": {
+          "enum": [
+            "user_input",
+            "demo_assumption",
+            "verified_external",
+            "derived",
+            "user_observation",
+            "unknown"
+          ],
+          "title": "Source",
+          "type": "string"
+        },
+        "note": {
+          "default": "",
+          "title": "Note",
+          "type": "string"
+        },
+        "evidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExternalEvidence"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "observation_id": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Observation Id"
+        },
+        "derived_from": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Derived From",
+          "type": "array"
+        }
+      },
+      "required": [
+        "value",
+        "source"
+      ],
+      "title": "SourceField[Annotated[int, FieldInfo(annotation=NoneType, required=True, metadata=[Strict(strict=True), Ge(ge=1), Le(le=1000000)])]]",
+      "type": "object"
+    }
+  },
+  "discriminator": {
+    "mapping": {
+      "appointment_service": "#/$defs/ServiceScene",
+      "retail_durable": "#/$defs/DurableScene",
+      "retail_perishable": "#/$defs/PerishableScene"
+    },
+    "propertyName": "business_type"
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/PerishableScene"
+    },
+    {
+      "$ref": "#/$defs/DurableScene"
+    },
+    {
+      "$ref": "#/$defs/ServiceScene"
+    }
+  ]
+}

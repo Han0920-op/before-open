@@ -1,0 +1,19 @@
+import type { components } from "../generated/api";
+
+type Schemas = components["schemas"];
+export type Scene = Schemas["PreviewRequest"]["scene"];
+export type BusinessType = Scene["business_type"];
+export type Source = Scene["fields"]["unit_price_cents"]["source"];
+export type SourceValue = Scene["fields"]["unit_price_cents"];
+export type Project = Schemas["ProjectView"];
+export type ProjectDetail = Schemas["ProjectDetail"];
+export type Version = Schemas["VersionView"];
+export type Preview = Schemas["CalculationPreview"];
+export type Run = Schemas["RunView"];
+export type Comparison = Schemas["ComparisonView"];
+export type Task = Schemas["ExperimentView"];
+export type Observation = Schemas["ObservationView"];
+export type Summary = Schemas["SummaryView"];
+export type CompareInput = Schemas["CompareRequest"];
+export type TaskInput = Schemas["CreateExperiment"];
+export type ObservationInput = Schemas["CreateObservation"];

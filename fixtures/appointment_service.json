@@ -1,0 +1,53 @@
+{
+  "schema_version": "1.0",
+  "currency": "CNY",
+  "business_type": "appointment_service",
+  "title": "预约摄影",
+  "original_idea": "演示：预约摄影，按文档算例预演",
+  "location": {
+    "location_type": "demo_location",
+    "description": "演示地点，未核实经营许可",
+    "source": "demo_assumption",
+    "verified": false
+  },
+  "period_note": "单轮演示；固定成本仅计本轮一次。未含税务、退款等复杂项目。",
+  "fields": {
+    "unit_price_cents": {
+      "value": 12000,
+      "source": "demo_assumption",
+      "note": "V4.0 算例，仅为演示假设，不是真实调研"
+    },
+    "unit_cost_cents": {
+      "value": 2000,
+      "source": "demo_assumption",
+      "note": "V4.0 算例，仅为演示假设，不是真实调研"
+    },
+    "minutes_per_job": {
+      "value": 90,
+      "source": "demo_assumption",
+      "note": "V4.0 算例，仅为演示假设，不是真实调研"
+    },
+    "available_minutes": {
+      "value": 360,
+      "source": "demo_assumption",
+      "note": "V4.0 算例，仅为演示假设，不是真实调研"
+    },
+    "booked": {
+      "value": 6,
+      "source": "demo_assumption",
+      "note": "V4.0 算例，仅为演示假设，不是真实调研"
+    },
+    "cancelled": {
+      "value": 1,
+      "source": "demo_assumption",
+      "note": "V4.0 算例，仅为演示假设，不是真实调研"
+    },
+    "fixed_cost_cents": {
+      "value": 8000,
+      "source": "demo_assumption",
+      "note": "V4.0 算例，仅为演示假设，不是真实调研"
+    }
+  },
+  "demand_scenarios": [],
+  "simulation_model_version": "service-v1"
+}

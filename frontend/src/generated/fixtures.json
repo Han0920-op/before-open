@@ -1,0 +1,175 @@
+{
+  "retail_perishable": {
+    "schema_version": "1.0",
+    "currency": "CNY",
+    "business_type": "retail_perishable",
+    "title": "校园冰粉摊",
+    "original_idea": "演示：校园冰粉摊，按文档算例预演",
+    "location": {
+      "location_type": "demo_location",
+      "description": "演示地点，未核实经营许可",
+      "source": "demo_assumption",
+      "verified": false
+    },
+    "period_note": "单轮演示；固定成本仅计本轮一次。未含税务、退款等复杂项目。",
+    "fields": {
+      "budget_cents": {
+        "value": null,
+        "source": "unknown",
+        "note": "尚未提供"
+      },
+      "unit_price_cents": {
+        "value": 900,
+        "source": "demo_assumption",
+        "note": "V4.0 算例，仅为演示假设，不是真实调研"
+      },
+      "unit_cost_cents": {
+        "value": 350,
+        "source": "demo_assumption",
+        "note": "V4.0 算例，仅为演示假设，不是真实调研"
+      },
+      "stock_qty": {
+        "value": 30,
+        "source": "demo_assumption",
+        "note": "V4.0 算例，仅为演示假设，不是真实调研"
+      },
+      "fixed_cost_cents": {
+        "value": 12000,
+        "source": "demo_assumption",
+        "note": "V4.0 算例，仅为演示假设，不是真实调研"
+      }
+    },
+    "demand_scenarios": [
+      {
+        "scenario_label": "low",
+        "demand_qty": {
+          "value": 12,
+          "source": "demo_assumption",
+          "note": "V4.0 算例，仅为演示假设，不是真实调研"
+        }
+      },
+      {
+        "scenario_label": "medium",
+        "demand_qty": {
+          "value": 30,
+          "source": "demo_assumption",
+          "note": "V4.0 算例，仅为演示假设，不是真实调研"
+        }
+      },
+      {
+        "scenario_label": "high",
+        "demand_qty": {
+          "value": 45,
+          "source": "demo_assumption",
+          "note": "V4.0 算例，仅为演示假设，不是真实调研"
+        }
+      }
+    ],
+    "simulation_model_version": "retail-perishable-v1"
+  },
+  "retail_durable": {
+    "schema_version": "1.0",
+    "currency": "CNY",
+    "business_type": "retail_durable",
+    "title": "手工饰品",
+    "original_idea": "演示：手工饰品，按文档算例预演",
+    "location": {
+      "location_type": "demo_location",
+      "description": "演示地点，未核实经营许可",
+      "source": "demo_assumption",
+      "verified": false
+    },
+    "period_note": "单轮演示；固定成本仅计本轮一次。未含税务、退款等复杂项目。",
+    "fields": {
+      "budget_cents": {
+        "value": null,
+        "source": "unknown",
+        "note": "尚未提供"
+      },
+      "unit_price_cents": {
+        "value": 1500,
+        "source": "demo_assumption",
+        "note": "V4.0 算例，仅为演示假设，不是真实调研"
+      },
+      "unit_cost_cents": {
+        "value": 600,
+        "source": "demo_assumption",
+        "note": "V4.0 算例，仅为演示假设，不是真实调研"
+      },
+      "stock_qty": {
+        "value": 20,
+        "source": "demo_assumption",
+        "note": "V4.0 算例，仅为演示假设，不是真实调研"
+      },
+      "fixed_cost_cents": {
+        "value": 5000,
+        "source": "demo_assumption",
+        "note": "V4.0 算例，仅为演示假设，不是真实调研"
+      }
+    },
+    "demand_scenarios": [
+      {
+        "scenario_label": "base",
+        "demand_qty": {
+          "value": 8,
+          "source": "demo_assumption",
+          "note": "V4.0 算例，仅为演示假设，不是真实调研"
+        }
+      }
+    ],
+    "simulation_model_version": "retail-durable-v1"
+  },
+  "appointment_service": {
+    "schema_version": "1.0",
+    "currency": "CNY",
+    "business_type": "appointment_service",
+    "title": "预约摄影",
+    "original_idea": "演示：预约摄影，按文档算例预演",
+    "location": {
+      "location_type": "demo_location",
+      "description": "演示地点，未核实经营许可",
+      "source": "demo_assumption",
+      "verified": false
+    },
+    "period_note": "单轮演示；固定成本仅计本轮一次。未含税务、退款等复杂项目。",
+    "fields": {
+      "unit_price_cents": {
+        "value": 12000,
+        "source": "demo_assumption",
+        "note": "V4.0 算例，仅为演示假设，不是真实调研"
+      },
+      "unit_cost_cents": {
+        "value": 2000,
+        "source": "demo_assumption",
+        "note": "V4.0 算例，仅为演示假设，不是真实调研"
+      },
+      "minutes_per_job": {
+        "value": 90,
+        "source": "demo_assumption",
+        "note": "V4.0 算例，仅为演示假设，不是真实调研"
+      },
+      "available_minutes": {
+        "value": 360,
+        "source": "demo_assumption",
+        "note": "V4.0 算例，仅为演示假设，不是真实调研"
+      },
+      "booked": {
+        "value": 6,
+        "source": "demo_assumption",
+        "note": "V4.0 算例，仅为演示假设，不是真实调研"
+      },
+      "cancelled": {
+        "value": 1,
+        "source": "demo_assumption",
+        "note": "V4.0 算例，仅为演示假设，不是真实调研"
+      },
+      "fixed_cost_cents": {
+        "value": 8000,
+        "source": "demo_assumption",
+        "note": "V4.0 算例，仅为演示假设，不是真实调研"
+      }
+    },
+    "demand_scenarios": [],
+    "simulation_model_version": "service-v1"
+  }
+}

@@ -1,0 +1,1 @@
+"""Validated, immutable business contracts."""
