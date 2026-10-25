@@ -184,3 +184,24 @@ pre { white-space: pre-wrap; overflow-wrap: anywhere; padding: 15px; border-radi
   .site-footer { padding: 22px 20px; flex-direction: column; gap: 5px; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+
+/* Model configuration stays outside scene data and calculation controls. */
+.site-header { gap: 20px; flex-wrap: wrap; }
+.site-header nav { align-items: center; gap: 20px; }
+.model-connector { position: relative; }
+.model-connector > button { font-size: 12px; min-height: 40px; padding: 8px 13px; max-width: 240px; overflow-wrap: anywhere; }
+.model-panel { position: fixed; z-index: 30; right: max(20px, calc((100vw - 1220px) / 2)); top: 100px; width: min(460px, calc(100vw - 36px)); max-height: calc(100dvh - 125px); overflow-y: auto; box-shadow: 0 16px 60px #3c301d33; }
+.model-panel label { font-size: 14px; }
+.checkbox-label { display: flex; align-items: flex-start; font-size: 12px !important; font-weight: 400; }
+.checkbox-label input { width: 18px; min-width: 18px; min-height: 18px; margin-top: 3px; }
+.model-panel > button { margin-top: 20px; }
+.agent-panel { margin-bottom: 26px; }
+.agent-panel > button, .agent-panel .actions { margin-bottom: 18px; }
+.agent-panel h3 { margin-top: 20px; }
+.agent-panel > ul { padding-left: 20px; }
+.trace-item { border-top: 1px solid #e4dbcd; padding-top: 10px; }
+.trace-item small { display: block; overflow-wrap: anywhere; }
+@media (max-width: 720px) {
+  .site-header nav { width: 100%; justify-content: space-between; gap: 10px; }
+  .model-panel { top: 135px; max-height: calc(100dvh - 155px); right: 18px; }
+}

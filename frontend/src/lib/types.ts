@@ -17,3 +17,7 @@ export type Summary = Schemas["SummaryView"];
 export type CompareInput = Schemas["CompareRequest"];
 export type TaskInput = Schemas["CreateExperiment"];
 export type ObservationInput = Schemas["CreateObservation"];
+export type AgentResult = Schemas["AgentResult"];
+export type ModelStatus = Schemas["ModelStatus"];
+export type ModelConnection = Schemas["ConnectionInput"];
+export type Clarifications = Schemas["ClarificationInput"];

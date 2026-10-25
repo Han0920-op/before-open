@@ -151,6 +151,8 @@ class ToolView(FrozenModel):
     output_summary: dict[str, Any]
     status: str
     duration_ms: int
+    request_id: str | None = None
+    scene_version_id: str | None = None
 
 
 class AgentRunView(FrozenModel):

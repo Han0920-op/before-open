@@ -1,5 +1,5 @@
 import type { Comparison, CompareInput, Observation, ObservationInput, Preview, Project,
-  ProjectDetail, Run, Scene, Summary, Task, TaskInput, Version } from "./types";
+  ProjectDetail, Run, Scene, Summary, Task, TaskInput, Version, AgentResult, ModelStatus, ModelConnection, Clarifications } from "./types";
 
 export class ApiError extends Error {
   constructor(public readonly code: string, message: string, public readonly requestId?: string) {
@@ -101,6 +101,17 @@ export class ApiClient {
   observe(id: string, body: ObservationInput, key: string) {
     return this.request<Observation>(`/experiments/${encodeURIComponent(id)}/observations`, body, key);
   }
+  models() { return this.request<ModelStatus>("/models"); }
+  connectModel(body: ModelConnection) { return this.request<ModelStatus>("/model-connection", body); }
+  disconnectModel() { return this.request<ModelStatus>("/model-connection/disconnect", {}); }
+  sceneDraft(id: string, key: string) { return this.request<AgentResult>(`/projects/${encodeURIComponent(id)}/scene-draft`, {}, key); }
+  clarify(id: string, body: Clarifications, key: string) { return this.request<AgentResult>(`/projects/${encodeURIComponent(id)}/clarifications`, body, key); }
+  confirmAgent(id: string, run_id: string, key: string) { return this.request<AgentResult>(`/projects/${encodeURIComponent(id)}/agent-confirm`, { run_id, confirmed: true }, key); }
+  agent(id: string, runId: string) { return this.request<AgentResult>(`/projects/${encodeURIComponent(id)}/agent-runs/${encodeURIComponent(runId)}`); }
+  analyze(id: string, version: string, scenario_label: string, key: string) { return this.request<AgentResult>(`/projects/${encodeURIComponent(id)}/agent-runs`, { scene_version_id: version, scenario_label }, key); }
+  agentAction(id: string, runId: string, action_id: string, key: string) { return this.request<AgentResult>(`/projects/${encodeURIComponent(id)}/agent-runs/${encodeURIComponent(runId)}/actions`, { action_id, confirmed: true }, key); }
+  retryAgent(id: string, run_id: string, key: string) { return this.request<AgentResult>(`/projects/${encodeURIComponent(id)}/agent-retry`, { run_id, confirmed: true }, key); }
+  experimentDraft(id: string, version: string, scenario_label: string, key: string) { return this.request<AgentResult>(`/projects/${encodeURIComponent(id)}/experiment-draft`, { scene_version_id: version, scenario_label }, key); }
 }
 
 export const api = new ApiClient();

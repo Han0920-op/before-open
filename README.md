@@ -1,6 +1,6 @@
 # 未开张 Before Open
 
-当前完成阶段 3 的 React + TypeScript 本地前端：已有首页、手动准备、三类型动态沙盒、方案比较、现实挑战及项目列表，并对接真实业务 API。用户已确认先开发可迁移本地前端、后续对接秒哒。自然语言解析、Agent 编排与秒哒发布尚未实现。
+当前已实现阶段 4 核心代码：模型接入页、单个 ScenarioAgent、自然语言事实抽取、澄清、人工确认、白名单工具、风险卡和可恢复工作流。前端仍为用户确认的 React + TypeScript 本地版。真实服务商联调待用户接入密钥验证；测试模型不代表真实模型准确率。秒哒发布尚未验证。
 
 需求基线：[V4.0](未开张_BeforeOpen_开发智能体执行方案_V4.0.md)；工作约定：[AGENTS.md](AGENTS.md)。上传的 Markdown 原样归档，DOCX 不作为第二套基线。
 
@@ -14,6 +14,7 @@
 - [业务 API 契约](docs/API_CONTRACT.md) / [生成的 OpenAPI](docs/openapi.json)
 - [阶段 3 报告](docs/PHASE3_REPORT.md) / [前端运行说明](frontend/README.md)
 - [后续秒哒对接说明](docs/MIAODA_HANDOFF.md)
+- [阶段 4 开发报告](docs/PHASE4_REPORT.md) / [模型接入与 Agent 使用](docs/AGENT_GUIDE.md)
 
 ## 安装与验证
 
@@ -34,7 +35,7 @@ uv sync --locked --no-install-project
 
 虚拟环境保存在 `backend/.venv`，不提交。开发数据库脚本仅绑定回环地址、随机生成本地口令、保存到被忽略的 `.local/`（权限 700，凭据文件 600），重复执行会启动本脚本拥有的现有容器，不覆盖旧配置。不会输出口令。数据库已启动后，后端的安装、迁移与验证命令均可重复执行。
 
-也可通过进程环境的 `DATABASE_URL` 使用已有 PostgreSQL，不运行本地 Docker 脚本；不要将完整连接串写入聊天、日志或提交。集成测试使用独立临时 schema，不删除开发库数据；仍需要 PostgreSQL，不能只用 SQLite 的通过结果替代。应用不自动读取 `.env`；不调用模型、外部商业数据或遥测。
+也可通过进程环境的 `DATABASE_URL` 使用已有 PostgreSQL，不运行本地 Docker 脚本；不要将完整连接串写入聊天、日志或提交。集成测试使用独立临时 schema，不删除开发库数据；仍需要 PostgreSQL，不能只用 SQLite 的通过结果替代。应用不自动读取 `.env`。默认不调用模型；用户接入并授权后才向选定模型服务发送本项目必要数据。LangSmith 追踪关闭，不接外部商业数据库。
 
 注意：本地 PostgreSQL 数据位于 Docker 命名卷，API/进程重启不会丢失，但不保证随云环境文件快照恢复。生产数据应使用独立持久 PostgreSQL 并备份；发布环境快照不等于发布/备份数据库。若容器丢失而本地凭据仍存在，脚本会停止以保护旧数据，不盲目新建空库。
 
@@ -95,4 +96,4 @@ run = simulate(
 assert replay_snapshot(run) == run
 ```
 
-场景不完整时 CLI 以退出码 2 和结构化错误结束，不补造成本或需求。CLI 保持纯本地计算，不自动保存数据库；API 的 simulate 入口会保存输入、来源、模型版本与结果。UI 调参使用只读草稿 preview，不创建永久版本；只有用户明确保存时才创建分支和模拟记录。下一阶段为受控 Agent，当前不冒充已实现自然语言解析。
+场景不完整时 CLI 以退出码 2 和结构化错误结束，不补造成本或需求。CLI 保持纯本地计算，不自动保存数据库；API 的 simulate 入口会保存输入、来源、模型版本与结果。UI 调参使用只读草稿 preview，不创建永久版本；只有用户明确保存才创建分支和模拟记录。Agent 接入方式与真实模型联调要求见 AGENT_GUIDE。

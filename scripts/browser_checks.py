@@ -14,6 +14,7 @@ import socket
 import subprocess
 import sys
 import time
+from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
@@ -223,6 +224,11 @@ def main() -> None:
     parser.add_argument(
         "--production", action="store_true", help="test built assets using Vite preview"
     )
+    parser.add_argument(
+        "--agent",
+        action="store_true",
+        help="isolated scripted-model Agent UI test, no real provider",
+    )
     args = parser.parse_args()
     url = Settings.load().database_url
     if not url or not url.startswith("postgresql"):
@@ -231,6 +237,9 @@ def main() -> None:
     if not chromium:
         raise RuntimeError("Install system Chromium; browser checks cannot be claimed without it")
     ARTIFACTS.mkdir(parents=True, exist_ok=True)
+    report_path = ARTIFACTS / ("agent-report.json" if args.agent else "report.json")
+    execution_id = uuid4().hex
+    report_path.write_text(json.dumps({"status": "running", "execution_id": execution_id}))
     admin = make_engine(url)
     schema = "test_browser_" + uuid4().hex
     with admin.begin() as connection:
@@ -249,13 +258,15 @@ def main() -> None:
             command.upgrade(config, "head")
         api_port, ui_port = free_port(), free_port()
         backend_env = {**os.environ, "DATABASE_URL": test_url, "COOKIE_SECURE": "false"}
+        if args.agent:
+            backend_env["BEFORE_OPEN_AGENT_TEST"] = "1"
         processes.append(
             subprocess.Popen(
                 [
                     sys.executable,
                     "-m",
                     "uvicorn",
-                    "app.main:app",
+                    "tests.agent_cases.browser_app:app" if args.agent else "app.main:app",
                     "--host",
                     "127.0.0.1",
                     "--port",
@@ -296,22 +307,29 @@ def main() -> None:
                     args=["--no-sandbox", "--disable-dev-shm-usage"],
                 )
                 try:
+                    if args.agent:
+                        from tests.agent_cases.browser_ui import run_agent_checks
+
+                        return await run_agent_checks(
+                            browser, f"http://127.0.0.1:{ui_port}", ARTIFACTS
+                        )
                     return await run_checks(browser, f"http://127.0.0.1:{ui_port}")
                 finally:
                     await browser.close()
 
         results = asyncio.run(check())
         report = {
+            "execution_id": execution_id,
+            "completed_at": datetime.now(UTC).isoformat(),
             "status": "passed",
             "scenarios": results,
             "count": len(results),
             "database": "isolated PostgreSQL schema",
             "build": "production" if args.production else "development",
+            "model_transport": "scripted_test_not_real_provider" if args.agent else "not_used",
             "screenshots": str(ARTIFACTS),
         }
-        (ARTIFACTS / "report.json").write_text(
-            json.dumps(report, ensure_ascii=False, indent=2) + "\n"
-        )
+        report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
         print(json.dumps(report, ensure_ascii=False))
     finally:
         for process in reversed(processes):

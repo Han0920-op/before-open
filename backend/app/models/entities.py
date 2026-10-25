@@ -87,10 +87,14 @@ class AgentRun(Record):
     __tablename__ = "agent_runs"
     __table_args__ = (CheckConstraint("total_steps >= 0"),)
     project_id: Mapped[str] = mapped_column(ForeignKey("projects.id"), index=True)
-    thread_id: Mapped[str] = mapped_column(String(100))
+    thread_id: Mapped[str] = mapped_column(String(100), unique=True, index=True)
     stage: Mapped[str] = mapped_column(String(60))
     status: Mapped[str] = mapped_column(String(30))
     total_steps: Mapped[int] = mapped_column(Integer)
+    total_calls: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    request_id: Mapped[str | None] = mapped_column(String(36))
+    error_code: Mapped[str | None] = mapped_column(String(60))
+    result_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, server_default="{}")
 
 
 class ToolInvocation(Record):
@@ -102,6 +106,29 @@ class ToolInvocation(Record):
     output_summary_json: Mapped[dict[str, Any]] = mapped_column(JSON)
     status: Mapped[str] = mapped_column(String(30))
     duration_ms: Mapped[int] = mapped_column(Integer)
+    request_id: Mapped[str | None] = mapped_column(String(36))
+    idempotency_key: Mapped[str | None] = mapped_column(String(128))
+    scene_version_id: Mapped[str | None] = mapped_column(ForeignKey("scene_versions.id"))
+
+
+class AgentCheckpoint(Base):
+    __tablename__ = "agent_checkpoints"
+    thread_id: Mapped[str] = mapped_column(ForeignKey("agent_runs.thread_id"), primary_key=True)
+    namespace: Mapped[str] = mapped_column(String(200), primary_key=True)
+    checkpoint_id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    parent_id: Mapped[str | None] = mapped_column(String(100))
+    payload_json: Mapped[dict[str, Any]] = mapped_column(JSON)
+
+
+class AgentCheckpointWrite(Base):
+    __tablename__ = "agent_checkpoint_writes"
+    thread_id: Mapped[str] = mapped_column(ForeignKey("agent_runs.thread_id"), primary_key=True)
+    namespace: Mapped[str] = mapped_column(String(200), primary_key=True)
+    checkpoint_id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    task_id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    index: Mapped[int] = mapped_column(Integer, primary_key=True)
+    channel: Mapped[str] = mapped_column(String(100))
+    payload_json: Mapped[dict[str, Any]] = mapped_column(JSON)
 
 
 class RiskCard(Record):

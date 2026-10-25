@@ -79,7 +79,7 @@ PostgreSQL 连接超时 5 秒、锁等待上限 5 秒、语句上限 10 秒。�
 
 阶段 3 新增 preview：请求为 `{scene, scenario_label}`，返回 CalculationPreview，包含完整输入、模型版本、结果、来源依赖和时间，但不附加 scene_version_id，不宣称草稿已经冻结。所有权、来源、CSRF 和数值规则与保存/模拟相同；版本、模拟和幂等表均不写入。只有用户明确保存时才调用原 branches/simulate。
 
-本阶段没有 LLM 或 LangGraph。scene-draft、clarifications、experiment-draft 的 AI 生成入口留待阶段 4，不提供假生成或伪造进度。AgentRun/ToolInvocation/RiskCard 已有存储结构，但没有对客户端开放创建工具记录的接口；不存在记录时返回 404，不能把数据库结构当作 Agent 已运行的证据。
+阶段 4 已接入 LangChain/LangGraph 的服务接口、断点存储及工具轨迹，新增路由和模型隐私约定见 [AGENT_GUIDE.md](AGENT_GUIDE.md)。不存在记录仍返回 404，没有对客户端开放伪造工具记录的接口。真实服务商调用尚待用户提供密钥与网络条件验证，不把测试模型当作真实联调通过。
 
 秒哒跨域接入、跨站 Cookie、赛事规则与用户体验均尚未验证；当前 CORS 是显式白名单、Cookie SameSite=Lax，不宣称适用于任意跨站 H5。
 

@@ -12,6 +12,13 @@ class Settings:
     body_timeout: float = 10.0
     rate_limit: int = 120
     session_days: int = 30
+    llm_enabled: bool = False
+    llm_key: str | None = field(default=None, repr=False)
+    llm_model: str | None = None
+    llm_base_url: str = "https://api.openai.com/v1"
+    agent_max_nodes: int = 8
+    agent_max_calls: int = 6
+    llm_timeout: float = 8.0
 
     def __post_init__(self) -> None:
         if "*" in self.allowed_origins:
@@ -35,4 +42,8 @@ class Settings:
             allowed_origins=tuple(
                 o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "").split(",") if o.strip()
             ),
+            llm_enabled=os.environ.get("BO_LLM_ENABLED", "false").lower() == "true",
+            llm_key=os.environ.get("BO_LLM_API_KEY"),
+            llm_model=os.environ.get("BO_LLM_MODEL"),
+            llm_base_url=os.environ.get("BO_LLM_BASE_URL", "https://api.openai.com/v1"),
         )

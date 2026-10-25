@@ -6,11 +6,11 @@ from fastapi import APIRouter, Header, Query, Request, Response
 from pydantic import BaseModel
 from sqlalchemy import select, text
 
+from app.agent.contracts import AgentResult
 from app.core.errors import DomainError
 from app.core.security import Actor, Db, open_session
 from app.models.entities import Project, SceneVersion, SimulationRun
 from app.schemas.api import (
-    AgentRunView,
     CompareRequest,
     ComparisonView,
     ConfirmScene,
@@ -62,7 +62,7 @@ def session(request: Request, response: Response, db: Db) -> Envelope[SessionVie
 @router.get("/ready", response_model=Envelope[dict[str, str]])
 def ready(request: Request, db: Db) -> Envelope[dict[str, str]]:
     revision = db.scalar(text("SELECT version_num FROM alembic_version"))
-    if revision != "0001":
+    if revision != "0002":
         raise DomainError(503, "DATABASE_NOT_READY", "数据库迁移尚未就绪")
     return envelope(request, {"database": "ok", "revision": revision})
 
@@ -260,13 +260,13 @@ def create_observation(
     )
 
 
-@router.get("/projects/{project_id}/agent-runs/{run_id}", response_model=Envelope[AgentRunView])
+@router.get("/projects/{project_id}/agent-runs/{run_id}", response_model=Envelope[AgentResult])
 def get_agent_run(
     project_id: str, run_id: str, request: Request, db: Db, actor: Actor
-) -> Envelope[AgentRunView]:
-    return envelope(
-        request, service.agent_view(db, service.project_for(db, project_id, actor.id), run_id)
-    )
+) -> Envelope[AgentResult]:
+    from app.agent import service as agents
+
+    return envelope(request, agents.view(db, agents.run_for(db, project_id, run_id, actor.id)))
 
 
 @router.get("/projects/{project_id}/summary", response_model=Envelope[SummaryView])
