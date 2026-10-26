@@ -66,6 +66,11 @@ class Runtime:
                 entry["status"] = "completed"
                 return result
             except Exception as error:
+                if isinstance(error, AgentFailure) and error.code in {
+                    "SHARED_MODEL_LIMIT",
+                    "MODEL_INPUT_LIMIT",
+                }:
+                    raise
                 retryable = (
                     isinstance(error, (ValidationError, AgentFailure))
                     or "Timeout" in type(error).__name__

@@ -197,7 +197,9 @@ def main() -> int:
         print("\n[Before Open] Stopping frontend and backend...")
     except (StartupError, OSError, subprocess.SubprocessError) as error:
         # Do not include exception messages: third-party commands may contain secrets.
-        message = str(error) if isinstance(error, StartupError) else "Command failed; see output above."
+        message = (
+            str(error) if isinstance(error, StartupError) else "Command failed; see output above."
+        )
         print(f"[ERROR] {message}", file=sys.stderr)
         return 1
     finally:

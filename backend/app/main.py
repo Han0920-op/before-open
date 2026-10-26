@@ -17,8 +17,9 @@ from starlette.middleware.base import RequestResponseEndpoint
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse, Response
 
-from app.agent.model import ModelConnections
+from app.agent.model import BudgetedModel, ModelConnections, SharedModelBudget
 from app.api.agent_routes import router as agent_router
+from app.api.process_routes import router as process_router
 from app.api.routes import router
 from app.core.config import Settings
 from app.core.database import make_engine
@@ -45,7 +46,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or Settings.load()
     app = FastAPI(
         title="未开张 Before Open",
-        version="0.4.0",
+        version="0.5.0",
         responses={
             status: {"model": ErrorEnvelope}
             for status in (400, 401, 403, 404, 408, 409, 413, 422, 429, 500, 503)
@@ -53,8 +54,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.state.settings = settings
     app.state.model_connections = ModelConnections()
-    app.state.agent_model_factory = lambda session_id: app.state.model_connections.resolve(
-        session_id, settings
+    app.state.shared_model_budget = SharedModelBudget(settings.llm_shared_call_limit)
+    app.state.agent_model_factory = lambda session_id: BudgetedModel(
+        app.state.model_connections.resolve(session_id, settings), app.state.shared_model_budget
     )
     app.state.engine = make_engine(settings.database_url) if settings.database_url else None
     app.state.session_factory = (
@@ -149,6 +151,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.include_router(router)
     app.include_router(agent_router)
+    app.include_router(process_router)
     return app
 
 

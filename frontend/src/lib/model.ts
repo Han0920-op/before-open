@@ -65,7 +65,7 @@ export function draft(kind: BusinessType, project: Project, demo: boolean): Scen
   // Fixtures are generated from the backend-validated canonical JSON, not separately authored.
   const scene = structuredClone(fixtures[kind]) as unknown as Scene;
   scene.original_idea = project.original_idea;
-  scene.title = project.title;
+  scene.title = demo ? fixtures[kind].title : project.title;
   for (const field of Object.values(values(scene))) field.derived_from ??= [];
   scene.location.derived_from ??= [];
   for (const scenario of scene.demand_scenarios ?? []) scenario.demand_qty.derived_from ??= [];

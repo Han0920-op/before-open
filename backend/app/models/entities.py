@@ -83,6 +83,25 @@ class IdempotencyRecord(Base):
     response_json: Mapped[dict[str, Any]] = mapped_column(JSON)
 
 
+class ProcessRun(Record):
+    __tablename__ = "process_runs"
+    __table_args__ = (CheckConstraint("revision >= 0 AND revision <= 3"),)
+    simulation_run_id: Mapped[str] = mapped_column(ForeignKey("simulation_runs.id"), index=True)
+    profile_json: Mapped[dict[str, Any]] = mapped_column(JSON)
+    revision: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class ProcessStep(Record):
+    __tablename__ = "process_steps"
+    __table_args__ = (
+        UniqueConstraint("process_run_id", "sequence", name="uq_process_step"),
+        CheckConstraint("sequence >= 0 AND sequence <= 3"),
+    )
+    process_run_id: Mapped[str] = mapped_column(ForeignKey("process_runs.id"), index=True)
+    sequence: Mapped[int] = mapped_column(Integer)
+    ledger_json: Mapped[dict[str, Any]] = mapped_column(JSON)
+
+
 class AgentRun(Record):
     __tablename__ = "agent_runs"
     __table_args__ = (CheckConstraint("total_steps >= 0"),)
@@ -177,6 +196,6 @@ def reject_mutation(mapper: object, connection: object, target: object) -> None:
     raise ValueError("immutable business record")
 
 
-for _model in (SceneVersion, SimulationRun, Observation):
+for _model in (SceneVersion, SimulationRun, Observation, ProcessStep):
     event.listen(_model, "before_update", reject_mutation)
     event.listen(_model, "before_delete", reject_mutation)

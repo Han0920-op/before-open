@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { api } from "./lib/api";
 import type { AgentResult, ModelConnection, Scene, Version } from "./lib/types";
@@ -61,11 +61,24 @@ function FailedRun({ run, project, onUpdate }: { run: AgentResult; project: stri
     {action.error != null && <ErrorCard error={action.error} />}</div>;
 }
 
-export function AgentSetup({ project, onUseScene }: { project: string; onUseScene: (scene: Scene) => void }) {
+export function AgentSetup({ project, onUseScene, autoStart = false }: { project: string; autoStart?: boolean; onUseScene: (scene: Scene) => void }) {
   const [run, setRun] = useState<AgentResult>();
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [invalidFields, setInvalidFields] = useState<Set<string>>(new Set());
   const invalid = invalidFields.size > 0;
+  const status = useResource(`assistant-${project}`, () => api.assistantStatus());
+  const started = useRef(false);
+  async function prepare() {
+    await action.run(async () => {
+      const result = await api.sceneDraft(project, action.keyFor("draft", [project, run?.id]));
+      setRun(result); setAnswers({});
+    });
+  }
+  useEffect(() => {
+    if (autoStart && status.value?.available && !started.current) {
+      started.current = true; void prepare();
+    }
+  }, [autoStart, status.value?.available]);
   const action = useAction();
   async function clarify(demo: boolean) {
     if (!run) return;
@@ -73,11 +86,10 @@ export function AgentSetup({ project, onUseScene }: { project: string; onUseScen
     const result = await api.clarify(project, body, action.keyFor("clarify", body));
     setRun(result); setAnswers({}); setInvalidFields(new Set());
   }
-  return <section className="card agent-panel"><div className="section-title"><h2>也可以让智能体帮你准备</h2><span className="source">由你确认后再保存</span></div>
-    <p>先在顶部“模型接入”选择服务商并连接。AI只提取原句中的明确事实，未知条件会向你确认。</p>
-    <button className="secondary" disabled={action.pending} onClick={() => void action.run(async () => {
-      const result = await api.sceneDraft(project, action.keyFor("draft", [project, run?.id])); setRun(result); setAnswers({});
-    })}>{action.pending ? "正在执行当前请求……" : run ? "重新准备一份草稿" : "让智能体准备场景"}</button>
+  if (!status.value?.available && !run) return <div className="assistant-unavailable"><p>{status.value?.message ?? "正在检查智能整理服务；你也可以直接准备场景。"}</p>{status.error != null && <ErrorCard error={status.error} retry={status.reload}/>}</div>;
+  return <section className="card agent-panel"><div className="section-title"><h2>我先帮你搭个场景</h2><span className="source">由你确认后再保存</span></div>
+    <p>只提取你已经说清楚的条件。还不知道的，我们一起确认。</p>
+    <button className="secondary" disabled={action.pending} onClick={() => void prepare()}>{action.pending ? "正在执行当前请求……" : run ? "重新准备一份草稿" : "让智能体准备场景"}</button>
     {action.error != null && <ErrorCard error={action.error} />}
     {run && <>
       {run.status === "failed" && <FailedRun run={run} project={project} onUpdate={setRun} />}
@@ -92,7 +104,7 @@ export function AgentSetup({ project, onUseScene }: { project: string; onUseScen
           {run.status === "needs_confirmation" && <button disabled={action.pending} onClick={() => void action.run(async () => {
             const next = await api.confirmAgent(project, run.id, action.keyFor("confirm-agent", run.id)); setRun(next);
             if (next.scene_version_id) navigate(`/projects/${project}/play?version=${next.scene_version_id}&agent_run=${next.id}`);
-          })}>确认这些条件并运行分析</button>}
+          })}>确认条件，进入场景</button>}
         </>}
         <details><summary>完整场景与来源</summary><pre>{JSON.stringify(run.scene, null, 2)}</pre></details>
         <button className="secondary" onClick={() => onUseScene(run.scene!)}>把草稿交给我手动调整</button>
@@ -105,8 +117,10 @@ export function AgentSetup({ project, onUseScene }: { project: string; onUseScen
 export function AgentAnalysis({ project, version, label, initialRun }: { project: string; version: Version; label: string; initialRun?: string }) {
   const [run, setRun] = useState<AgentResult>();
   const action = useAction();
+  const service = useResource(`assistant-status-${project}`, () => api.assistantStatus());
   useEffect(() => { let live = true; if (initialRun) api.agent(project, initialRun).then((r) => { if (live) setRun(r); }).catch(() => {}); return () => { live = false; }; }, [project, initialRun]);
-  return <section className="card agent-panel"><h2>让智能体看看这个方案</h2><p className="muted">只分析已确认的方案。修改备货等关键条件前，仍会由你选择是否另存。</p>
+  if (!service.value?.available && !run) return null;
+  return <section className="card agent-panel"><h2>看看这次还有什么可以调整</h2><p className="muted">只分析已确认的方案。修改备货等关键条件前，仍会由你选择是否另存。</p>
     <button className="secondary" disabled={action.pending} onClick={() => void action.run(async () => setRun(await api.analyze(project, version.id, label, action.keyFor("analyze", [version.id, label, run?.id]))))}>{action.pending ? "正在运行当前分析……" : "分析当前已保存方案"}</button>
     {action.error != null && <ErrorCard error={action.error} />}
     {run && <>{run.status === "failed" && <FailedRun run={run} project={project} onUpdate={setRun} />}

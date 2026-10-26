@@ -101,3 +101,20 @@ PY
 ```
 
 自动测试检查该文件与当前路由模型一致。完整 Python 调用、三类演示和启动步骤见 README。
+
+
+## 场景改版第一批：逐段营业
+
+迁移0003增加独立业务过程表，不改变旧 SimulationSnapshot。过程接口当前只支持 retail_perishable，另两类继续使用原有模拟接口。
+
+| 方法与路径 | 用途 |
+|---|---|
+| POST /api/v1/scene-versions/{id}/process-runs | 提交 scenario_label 与严格布尔 confirmed=true；创建快照、确认三段均分假设，记录初始成本 |
+| GET /api/v1/scene-versions/{id}/process-runs | 最新一次过程，数组最多1项，没有过程返回空数组 |
+| GET /api/v1/process-runs/{id} | 读取有权访问过程的完整已执行台账 |
+| POST /api/v1/process-runs/{id}/advance | 严格整数 expected_revision（0～3），action=next或finish；finish执行所有剩余阶段，不是提前收摊 |
+| GET /api/v1/assistant-status | 默认服务是否配置且有本进程额度，不证明连通，不触发模型请求 |
+
+过程写接口沿用 CSRF、Origin 和 Idempotency-Key。修订号0为已开摊、已记成本、尚未营业。相同请求同键重放原回复，换键提交过期修订号返回409 PROCESS_REVISION_CONFLICT，需读取最新状态。过程步骤只追加，每一状态从保存的快照复算校验，终态与原公式对账。跨用户返回404。金额仍为整数分。
+
+ProcessView在完成前calculation=null，完成后提供关联的权威快照；累计收入不可解释为利润。类型继续由OpenAPI生成。

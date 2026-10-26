@@ -1,5 +1,5 @@
 import type { Comparison, CompareInput, Observation, ObservationInput, Preview, Project,
-  ProjectDetail, Run, Scene, Summary, Task, TaskInput, Version, AgentResult, ModelStatus, ModelConnection, Clarifications } from "./types";
+  ProjectDetail, Run, Scene, Summary, Task, TaskInput, Version, AgentResult, ModelStatus, ModelConnection, Clarifications, ProcessView, AssistantStatus } from "./types";
 
 export class ApiError extends Error {
   constructor(public readonly code: string, message: string, public readonly requestId?: string) {
@@ -102,6 +102,14 @@ export class ApiClient {
     return this.request<Observation>(`/experiments/${encodeURIComponent(id)}/observations`, body, key);
   }
   models() { return this.request<ModelStatus>("/models"); }
+  assistantStatus() { return this.request<AssistantStatus>("/assistant-status"); }
+  processes(version: string) { return this.request<ProcessView[]>(`/scene-versions/${encodeURIComponent(version)}/process-runs`); }
+  createProcess(version: string, scenario_label: string, key: string) {
+    return this.request<ProcessView>(`/scene-versions/${encodeURIComponent(version)}/process-runs`, { scenario_label, confirmed: true }, key);
+  }
+  advanceProcess(id: string, expected_revision: number, action: "next" | "finish", key: string) {
+    return this.request<ProcessView>(`/process-runs/${encodeURIComponent(id)}/advance`, { expected_revision, action }, key);
+  }
   connectModel(body: ModelConnection) { return this.request<ModelStatus>("/model-connection", body); }
   disconnectModel() { return this.request<ModelStatus>("/model-connection/disconnect", {}); }
   sceneDraft(id: string, key: string) { return this.request<AgentResult>(`/projects/${encodeURIComponent(id)}/scene-draft`, {}, key); }

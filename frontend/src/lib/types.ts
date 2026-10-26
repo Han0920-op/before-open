@@ -21,3 +21,5 @@ export type AgentResult = Schemas["AgentResult"];
 export type ModelStatus = Schemas["ModelStatus"];
 export type ModelConnection = Schemas["ConnectionInput"];
 export type Clarifications = Schemas["ClarificationInput"];
+export type ProcessView = Schemas["ProcessView"];
+export type AssistantStatus = Schemas["AssistantStatus"];

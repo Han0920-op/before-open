@@ -254,12 +254,14 @@ def advance(
             "model_calls": previous.get("model_calls", [])
             + (runtime.model_calls if runtime else []),
             "message": {
-                "LLM_AUTHENTICATION_FAILED": "密钥未被接受，请重新检查模型接入。手动预演仍可用。",
+                "LLM_AUTHENTICATION_FAILED": "智能整理服务连接失败，请稍后再试。手动预演仍可用。",
                 "LLM_ACCESS_DENIED": "访问被拒绝，请检查模型权限和环境域名。手动预演仍可用。",
                 "LLM_RATE_LIMITED": "服务限流或额度不足，请稍后重试。手动预演仍可用。",
                 "LLM_TIMEOUT": "模型服务超时，请稍后重试。已保存方案不会被覆盖。",
+                "SHARED_MODEL_LIMIT": "智能整理本期体验额度已用完，手动场景和经营过程仍可使用。",
+                "MODEL_INPUT_LIMIT": "这次内容过长，请简化想法后再试。手动预演仍可用。",
                 "MODEL_CHANGED": "模型已切换，请重新准备草稿；原方案和用户事实不会被覆盖。",
-            }.get(code, "AI这次未完成。已保存的方案仍可手动预演；请检查模型接入后重试。"),
+            }.get(code, "智能整理这次未完成。已保存的方案仍可手动预演，也可稍后重试。"),
         }
     if runtime:
         run.total_steps += runtime.nodes

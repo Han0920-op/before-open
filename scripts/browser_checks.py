@@ -58,9 +58,16 @@ async def create_example(page: Page, base: str, name: str) -> str:
     await page.get_by_role("button", name=re.compile(name)).click()
     await page.get_by_role("button", name=re.compile("开始预演")).click()
     await expect(page.get_by_role("heading", name="准备你的专属场景")).to_be_visible()
-    await expect(page.get_by_text("演示假设", exact=True).first).to_be_visible()
+    await expect(page.locator(".setup-overview")).to_contain_text("演示假设")
     await page.get_by_role("button", name="确认这些条件，开始预演 →").click()
-    await expect(page.get_by_role("heading", name="如果按这些条件试一次")).to_be_visible()
+    if "冰粉" in name:
+        await expect(
+            page.get_by_role("button", name="确认条件，开摊 →")
+        ).to_be_visible()
+    else:
+        await expect(
+            page.get_by_role("heading", name="如果按这些条件试一次")
+        ).to_be_visible()
     return page.url.split("/projects/")[1].split("/")[0]
 
 
@@ -72,70 +79,128 @@ async def no_overflow(page: Page) -> None:
 
 async def run_checks(browser: Browser, base: str) -> list[str]:
     results: list[str] = []
-    desktop = await browser.new_context(viewport={"width": 1440, "height": 1000}, locale="zh-CN")
-    page = await desktop.new_page()
+    context = await browser.new_context(
+        viewport={"width": 1440, "height": 1000}, locale="zh-CN"
+    )
+    page = await context.new_page()
     errors: list[str] = []
     page.on("pageerror", lambda error: errors.append(type(error).__name__))
     await page.goto(base)
     await expect(page.get_by_role("heading", level=1)).to_contain_text("真的开张了呢")
+    await expect(page.get_by_role("button", name="模型接入", exact=True)).to_have_count(
+        0
+    )
+    await expect(page.locator('input[type="password"]')).to_have_count(0)
     await no_overflow(page)
-    await page.screenshot(path=str(ARTIFACTS / "home-desktop.png"), full_page=True)
     await page.keyboard.press("Tab")
     await expect(page.get_by_role("link", name="跳到主要内容")).to_be_focused()
     await page.keyboard.press("Enter")
-    results.append("desktop home, accessible inputs and no overflow")
+    results.append("ordinary UI has no model setup or API Key; accessible home")
 
-    project = await create_example(page, base, "卖冰粉")
-    await expect(page.locator(".metric.primary strong")).to_have_text("−¥117.00")
-    # Invalid data clears results; it must never leave stale successful numbers on screen.
+    await create_example(page, base, "卖冰粉")
+    await expect(
+        page.get_by_text("总需求 12 份，按 4 / 4 / 4", exact=False)
+    ).to_be_visible()
+    await expect(page.get_by_role("button", name="确认条件，开摊 →")).to_be_enabled()
+    await page.screenshot(path=str(ARTIFACTS / "scene-preparation.png"), full_page=True)
+    await page.get_by_role("button", name="点击备货箱，调整备货").click()
     await page.get_by_label("今天准备多少份", exact=True).fill("-1")
-    await expect(page.get_by_text("请先修正标红的输入。")).to_be_visible()
-    await expect(page.locator(".metric.primary")).to_have_count(0)
-    await page.get_by_label("今天准备多少份", exact=True).fill("10")
-    await expect(page.locator(".metric.primary strong")).to_have_text("−¥65.00")
-    await page.screenshot(path=str(ARTIFACTS / "sandbox-desktop.png"), full_page=True)
-    # Previewing changes must not persist any extra versions.
-    versions = await page.evaluate(
-        "async (id) => (await (await fetch('/api/v1/projects/'+id)).json()).data.versions.length",
-        project,
-    )
-    assert versions == 1
-    await page.get_by_role("button", name="保存为新方案").click()
-    await expect(page.get_by_text("方案 2", exact=True)).to_be_visible()
-    await page.reload()
-    await expect(page.locator(".metric.primary strong")).to_have_text("−¥65.00")
+    await expect(page.get_by_role("button", name="确认条件，开摊 →")).to_be_disabled()
+    await page.get_by_label("今天准备多少份", exact=True).fill("30")
+    await expect(page.get_by_role("button", name="确认条件，开摊 →")).to_be_enabled()
+    # Merely editing or looking at a scene does not create process records.
+    await expect(page.get_by_text("根据公式算出", exact=True)).to_have_count(0)
     results.append(
-        "retail_perishable: invalid input, authoritative preview, explicit branch and reload"
+        "scene hotspots edit authoritative preparation; invalid input prevents opening"
     )
 
+    await page.get_by_role("button", name="确认条件，开摊 →").click()
+    await expect(page.get_by_role("button", name="下一阶段 →")).to_be_visible()
+    await expect(page.locator(".live-metrics")).to_contain_text("¥225.00")
+    await page.get_by_role("button", name="下一阶段 →").click()
+    await expect(page.locator(".stage-badge")).to_have_text("第 1 阶段")
+    await expect(page.locator(".live-metrics")).to_contain_text("¥36.00")
+    await expect(
+        page.get_by_role("button", name="点击备货箱，调整备货")
+    ).to_contain_text("26 份")
+    await page.reload()
+    await expect(page.locator(".stage-badge")).to_have_text("第 1 阶段")
+    await page.screenshot(path=str(ARTIFACTS / "scene-trading.png"), full_page=True)
+    results.append(
+        "opening, stage ledger and page reload restore the exact server state"
+    )
+
+    # The server has committed, but the response is lost. Retrying reuses the intent key.
+    async def lose_response(route: Route) -> None:
+        await route.fetch()
+        await route.abort()
+
+    await page.route("**/advance", lose_response)
+    await page.get_by_role("button", name="下一阶段 →").click()
+    await expect(page.get_by_role("alert")).to_be_visible()
+    await page.unroute("**/advance")
+    await page.get_by_role("button", name="下一阶段 →").click()
+    await expect(page.locator(".stage-badge")).to_have_text("第 2 阶段")
+    await expect(page.locator(".live-metrics")).to_contain_text("¥72.00")
+    await page.get_by_role("button", name="直接看完整结算").click()
+    await expect(page.locator(".metric.primary strong")).to_have_text("−¥117.00")
+    await expect(
+        page.get_by_role("button", name="点击备货箱，调整备货")
+    ).to_contain_text("18 份")
+    await page.get_by_text("查看本轮营业记录（已保存）", exact=True).click()
+    await expect(page.locator(".process-ledger li")).to_have_count(4)
+    await page.screenshot(path=str(ARTIFACTS / "scene-closing.png"), full_page=True)
+    results.append(
+        "lost response retry does not double-sell; fast-forward reconciles to −117 yuan"
+    )
+
+    # Restarting without changing conditions must still recover after a reload.
+    await page.get_by_role("button", name="回到筹备，另试方案", exact=True).click()
+    await page.get_by_role("button", name="确认条件，开摊 →").click()
+    await expect(page.locator(".stage-badge")).to_have_text("开摊了")
+    await page.reload()
+    await expect(page.locator(".stage-badge")).to_have_text("开摊了")
+    await page.get_by_role("button", name="直接看完整结算").click()
+    await expect(page.locator(".metric.primary strong")).to_have_text("−¥117.00")
+    results.append("same-version restart persists through reload without deleting prior ledgers")
+    await page.get_by_role("button", name="回到筹备，另试方案", exact=True).click()
+    await page.get_by_role("button", name="点击备货箱，调整备货").click()
+    await page.get_by_label("今天准备多少份", exact=True).fill("15")
+    await page.get_by_role("button", name="确认条件，开摊 →").click()
+    await expect(page.get_by_role("button", name="下一阶段 →")).to_be_visible()
+    await page.get_by_role("button", name="自动播放", exact=True).click()
+    await page.get_by_role("button", name="暂停自动播放", exact=True).click()
+    await page.wait_for_timeout(2600)
+    await expect(page.locator(".stage-badge")).to_have_text("开摊了")
+    await page.get_by_role("button", name="直接看完整结算").click()
+    await expect(page.locator(".metric.primary strong")).to_have_text("−¥64.50")
     await page.get_by_role("link", name="3 比比方案").click()
     await page.get_by_role("button", name="看看有什么不同").click()
-    await expect(page.get_by_text("两边采用相同的需求假设。", exact=False)).to_be_visible()
-    await expect(page.locator(".compare-grid .metric.primary strong").first).to_have_text(
-        "−¥117.00"
+    await expect(
+        page.locator(".compare-grid .metric.primary strong").first
+    ).to_have_text("−¥117.00")
+    await expect(
+        page.locator(".compare-grid .metric.primary strong").last
+    ).to_have_text("−¥64.50")
+    results.append(
+        "pause does not progress; new preparation branches and preserves the original"
     )
-    await expect(page.locator(".compare-grid .metric.primary strong").last).to_have_text("−¥65.00")
-    await page.screenshot(path=str(ARTIFACTS / "comparison-desktop.png"), full_page=True)
-    results.append("parallel comparison preserves the original scheme")
 
     await page.get_by_role("link", name="4 现实挑战").click()
-    await page.get_by_label("最想确认的一个问题").fill("价格接受度（自动化测试，不是真实调查）")
-    await page.get_by_label("打算怎么了解").fill("仅测试保存流程；真实调查须另行征得参与者同意。")
+    await page.get_by_label("最想确认的一个问题").fill(
+        "材料报价（自动化测试，不是真实调查）"
+    )
+    await page.get_by_label("打算怎么了解").fill("仅测试保存；真实调查须征得同意。")
     await page.get_by_role("button", name="保存这项挑战").click()
-    await expect(page.get_by_label("你记录的数值")).to_be_visible()
     await page.get_by_label("你记录的数值").fill("9.00")
     await page.get_by_label("这次样本有多少个").fill("3")
-    await page.get_by_label("实际观察到了什么").fill("自动化测试数据，未做实际用户调查。")
-    await page.get_by_label("这次观察有什么局限").fill(
-        "这是隔离数据库中的测试记录，不代表真实反馈。"
-    )
+    await page.get_by_label("实际观察到了什么").fill("隔离自动化测试，未做真实调查。")
+    await page.get_by_label("这次观察有什么局限").fill("测试记录，不代表真实反馈。")
     await page.get_by_role("button", name="保存这次观察").click()
     await expect(page.locator(".observation")).to_have_count(1)
     await page.reload()
     await expect(page.locator(".observation")).to_contain_text("不代表真实反馈")
-    results.append(
-        "manual task and observation save/reload with explicit provenance and limitations"
-    )
+    results.append("existing reality task and observation persistence remain usable")
 
     await page.route("**/api/v1/projects?*", lambda route: route.abort())
     await page.get_by_role("link", name="我的想法", exact=True).click()
@@ -143,79 +208,41 @@ async def run_checks(browser: Browser, base: str) -> list[str]:
     await page.unroute("**/api/v1/projects?*")
     await page.get_by_role("button", name="再试一次").click()
     await expect(page.get_by_role("link", name="继续看看 →").first).to_be_visible()
-    results.append("network failure offers recovery without a blank page")
+    results.append("network errors provide recovery")
 
-    mobile = await browser.new_context(
-        viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True, locale="zh-CN"
+    phone_context = await browser.new_context(
+        viewport={"width": 390, "height": 844},
+        is_mobile=True,
+        has_touch=True,
+        locale="zh-CN",
+        reduced_motion="reduce",
     )
-    phone = await mobile.new_page()
+    phone = await phone_context.new_page()
+    await create_example(phone, base, "卖冰粉")
+    await phone.get_by_role("button", name="点击价签，调整价格").click()
+    await phone.get_by_label("每份卖多少钱（元）", exact=True).fill("10")
+    await expect(phone.get_by_role("button", name="确认条件，开摊 →")).to_be_enabled()
+    await no_overflow(phone)
+    await phone.screenshot(path=str(ARTIFACTS / "scene-mobile.png"), full_page=True)
+    await phone.get_by_role("button", name="确认条件，开摊 →").click()
+    await phone.get_by_role("button", name="直接看完整结算").click()
+    await expect(phone.locator(".metric.primary strong")).to_have_text("−¥105.00")
+    results.append("mobile scene, price interaction, reduced motion and no overflow")
     await create_example(phone, base, "做手工饰品")
     await expect(phone.locator(".metric.primary strong")).to_have_text("−¥50.00")
     await expect(phone.get_by_text("¥22.00", exact=True)).to_be_visible()
     await no_overflow(phone)
-    await phone.screenshot(path=str(ARTIFACTS / "durable-mobile.png"), full_page=True)
     await create_example(phone, base, "接宠物摄影订单")
     await expect(phone.locator(".metric.primary strong")).to_have_text("¥320.00")
     await phone.get_by_label("完成一单要多少分钟", exact=True).fill("180")
     await expect(phone.locator(".metric.primary strong")).to_have_text("¥120.00")
-    await expect(phone.get_by_label("今天准备多少份", exact=True)).to_have_count(0)
     await no_overflow(phone)
-    await phone.screenshot(path=str(ARTIFACTS / "service-mobile.png"), full_page=True)
-    results.append("mobile durable and service fields, amounts, live edits and no overflow")
-
-    # Check a delayed response cannot replace a newer draft's result.
-    await page.goto(f"{base}/projects/{project}/play")
-    await expect(page.locator(".metric.primary strong")).to_have_text("−¥65.00")
-
-    async def delay_old(route: Route) -> None:
-        data = route.request.post_data_json
-        if data["scene"]["fields"]["stock_qty"]["value"] == 15:
-            response = await route.fetch()
-            await asyncio.sleep(0.8)
-            try:
-                await route.fulfill(response=response)
-            except Exception:
-                pass  # Aborting this obsolete preview is the expected application behavior.
-        else:
-            await route.continue_()
-
-    await page.route("**/preview", delay_old)
-    await page.get_by_label("今天准备多少份", exact=True).fill("15")
-    await page.wait_for_timeout(400)
-    await page.get_by_label("今天准备多少份", exact=True).fill("9")
-    await expect(page.locator(".metric.primary strong")).to_have_text("−¥70.50")
-    await page.wait_for_timeout(1000)
-    await expect(page.locator(".metric.primary strong")).to_have_text("−¥70.50")
-    await page.unroute("**/preview", delay_old)
-    await page.route("**/preview", lambda route: route.abort())
-    await page.get_by_label("今天准备多少份", exact=True).fill("8")
-    await expect(page.get_by_role("alert")).to_be_visible()
-    await expect(page.locator(".metric.primary")).to_have_count(0)
-    await page.unroute("**/preview")
-    await page.get_by_role("button", name="再试一次").click()
-    await expect(page.locator(".metric.primary strong")).to_have_text("−¥76.00")
-    results.append("preview network failure clears stale numbers and can be retried")
-
-    async def lose_branch_response(route: Route) -> None:
-        await route.fetch()
-        await route.abort()
-
-    await page.route("**/branches", lose_branch_response)
-    await page.get_by_role("button", name="保存为新方案").click()
-    await expect(page.get_by_role("alert")).to_be_visible()
-    await page.unroute("**/branches")
-    await page.get_by_role("button", name="保存为新方案").click()
-    await expect(page.get_by_text("方案 3", exact=True)).to_be_visible()
-    versions = await page.evaluate(
-        "async (id) => (await (await fetch('/api/v1/projects/'+id)).json()).data.versions.length",
-        project,
+    results.append(
+        "durable and service retain their distinct existing controls and calculations"
     )
-    assert versions == 3
-    results.append("lost write response reuses the original intent key; no duplicate branch")
     assert not errors, errors
-    results.append("obsolete preview responses cannot overwrite the current result; no page errors")
-    await desktop.close()
-    await mobile.close()
+    await context.close()
+    await phone_context.close()
     return results
 
 
@@ -235,11 +262,15 @@ def main() -> None:
         raise RuntimeError("Start the documented PostgreSQL development service first")
     chromium = shutil.which("chromium")
     if not chromium:
-        raise RuntimeError("Install system Chromium; browser checks cannot be claimed without it")
+        raise RuntimeError(
+            "Install system Chromium; browser checks cannot be claimed without it"
+        )
     ARTIFACTS.mkdir(parents=True, exist_ok=True)
     report_path = ARTIFACTS / ("agent-report.json" if args.agent else "report.json")
     execution_id = uuid4().hex
-    report_path.write_text(json.dumps({"status": "running", "execution_id": execution_id}))
+    report_path.write_text(
+        json.dumps({"status": "running", "execution_id": execution_id})
+    )
     admin = make_engine(url)
     schema = "test_browser_" + uuid4().hex
     with admin.begin() as connection:
@@ -266,7 +297,9 @@ def main() -> None:
                     sys.executable,
                     "-m",
                     "uvicorn",
-                    "tests.agent_cases.browser_app:app" if args.agent else "app.main:app",
+                    "tests.agent_cases.browser_app:app"
+                    if args.agent
+                    else "app.main:app",
                     "--host",
                     "127.0.0.1",
                     "--port",
@@ -290,7 +323,10 @@ def main() -> None:
                     str(ui_port),
                 ],
                 cwd=ROOT / "frontend",
-                env={**os.environ, "BEFORE_OPEN_API_TARGET": f"http://127.0.0.1:{api_port}"},
+                env={
+                    **os.environ,
+                    "BEFORE_OPEN_API_TARGET": f"http://127.0.0.1:{api_port}",
+                },
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
                 start_new_session=True,
@@ -326,7 +362,9 @@ def main() -> None:
             "count": len(results),
             "database": "isolated PostgreSQL schema",
             "build": "production" if args.production else "development",
-            "model_transport": "scripted_test_not_real_provider" if args.agent else "not_used",
+            "model_transport": "scripted_test_not_real_provider"
+            if args.agent
+            else "not_used",
             "screenshots": str(ARTIFACTS),
         }
         report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")

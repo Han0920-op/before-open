@@ -181,3 +181,41 @@ class ModelConnections:
                 timeout=settings.llm_timeout,
             )
         raise AgentFailure("LLM_UNAVAILABLE")
+
+
+class SharedModelBudget:
+    """Single-process ceiling, reserved before each request, including failed attempts."""
+
+    def __init__(self, limit: int) -> None:
+        self.limit, self.used = limit, 0
+        self.lock = threading.Lock()
+
+    def available(self) -> bool:
+        with self.lock:
+            return self.used < self.limit
+
+    def reserve(self, data: object) -> None:
+        if len(json.dumps(data, ensure_ascii=False)) > 24000:
+            raise AgentFailure("MODEL_INPUT_LIMIT")
+        with self.lock:
+            if self.used >= self.limit:
+                raise AgentFailure("SHARED_MODEL_LIMIT")
+            self.used += 1
+
+
+class BudgetedModel:
+    def __init__(self, model: ScenarioModel, budget: SharedModelBudget) -> None:
+        self.model, self.budget = model, budget
+        self.identity = model.identity
+
+    def extract(self, original: str) -> Extraction:
+        self.budget.reserve(original)
+        return self.model.extract(original)
+
+    def plan(self, scene: dict[str, object]) -> ToolPlan:
+        self.budget.reserve(scene)
+        return self.model.plan(scene)
+
+    def experiment(self, context: dict[str, object]) -> ExperimentDraft:
+        self.budget.reserve(context)
+        return self.model.experiment(context)

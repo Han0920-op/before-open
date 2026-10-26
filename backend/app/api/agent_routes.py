@@ -20,9 +20,29 @@ from app.api.routes import Key, envelope, write
 from app.core.errors import DomainError
 from app.core.security import Actor, Db
 from app.schemas.api import Envelope
+from app.schemas.process import AssistantStatus
 from app.services import business
 
 router = APIRouter(prefix="/api/v1")
+
+
+@router.get("/assistant-status", response_model=Envelope[AssistantStatus])
+def assistant_status(request: Request, actor: Actor) -> Envelope[AssistantStatus]:
+    settings = request.app.state.settings
+    configured = (
+        bool(settings.llm_enabled and settings.llm_key and settings.llm_model)
+        or request.app.state.model_connections.get(actor.id) is not None
+    )
+    available = configured and request.app.state.shared_model_budget.available()
+    return envelope(
+        request,
+        AssistantStatus(
+            available=available,
+            message="可以帮你整理条件，实际可用性以本次请求结果为准。"
+            if available
+            else "智能整理暂不可用。你仍可用演示条件或自己准备场景。",
+        ),
+    )
 
 
 def model_status(request: Request, actor: Actor) -> ModelStatus:

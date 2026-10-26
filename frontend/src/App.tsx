@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { api } from "./lib/api";
-import { businessNames, defaultLabel, draft, examples, fieldsFor } from "./lib/model";
-import { parseCents, parseQuantity } from "./lib/money";
+import { businessNames, defaultLabel, draft, examples, fieldsFor, fieldValue, missingConditions, sourceNames } from "./lib/model";
+import { parseCents, parseQuantity, formatCents } from "./lib/money";
 import type { BusinessType, Comparison, ProjectDetail, Scene, Summary, Version } from "./lib/types";
 import { AppBoundary, ErrorCard, Link, Loading, Results, ScenarioSelect, SceneFields,
   navigate, useAction, usePreview, useResource } from "./ui";
 
-import { ModelConnector, AgentSetup, AgentAnalysis, ExperimentAssistant } from "./Agent";
+import { AgentSetup, AgentAnalysis, ExperimentAssistant } from "./Agent";
+import { SceneStage } from "./scene/SceneStage";
 
 const kinds: BusinessType[] = ["retail_perishable", "retail_durable", "appointment_service"];
 
@@ -36,7 +37,7 @@ function Home() {
     <form onSubmit={start} className="idea-form"><label htmlFor="idea">你想试试什么？</label>
       <textarea id="idea" maxLength={10000} rows={4} required value={idea} onChange={(e) => { setIdea(e.target.value); setExample(undefined); }}
         placeholder="例如：我想在学校周末市集卖冰粉，预算 500 元。" />
-      <div className="form-footer"><span>可手动准备，也可接入模型让智能体帮忙。</span><button disabled={action.pending || !idea.trim()}>{action.pending ? "正在保存想法……" : "开始预演 →"}</button></div>
+      <div className="form-footer"><span>说出想法，准备好条件就能亲手试营业。</span><button disabled={action.pending || !idea.trim()}>{action.pending ? "正在保存想法……" : "开始预演 →"}</button></div>
     </form>
     {action.error != null && <ErrorCard error={action.error} />}
     <div className="examples" aria-label="快速例子">{examples.map((e) => <button className="example" type="button" key={e.kind}
@@ -67,6 +68,7 @@ function Setup({ detail, example }: { detail: ProjectDetail; example?: BusinessT
   const [label, setLabel] = useState(() => defaultLabel(scene));
   const [generation, setGeneration] = useState(0);
   const [invalid, setInvalid] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const action = useAction();
   function reset(kind: BusinessType, demo: boolean) {
     const next = draft(kind, detail.project, demo);
@@ -81,10 +83,16 @@ function Setup({ detail, example }: { detail: ProjectDetail; example?: BusinessT
       navigate(`/projects/${detail.project.id}/play?version=${version.id}`);
     });
   }
-  return <><div className="page-title"><div><p className="eyebrow">先把条件摆在桌上</p><h1>准备你的专属场景</h1></div><span className="source">手动准备</span></div>
+  const missing = missingConditions(scene, label);
+  return <><div className="page-title"><div><p className="eyebrow">先把条件摆在桌上</p><h1>准备你的专属场景</h1></div></div>
     <p className="idea-quote">“{detail.project.original_idea}”</p>
-    <AgentSetup project={detail.project.id} onUseScene={(next) => { setScene(next); setLabel(defaultLabel(next)); setInvalid(false); setGeneration((v) => v + 1); }} />
-    <form onSubmit={save} className="setup-grid"><section className="card"><h2>想怎么试一次？</h2>
+    <AgentSetup project={detail.project.id} autoStart={!example && !latest} onUseScene={(next) => { setScene(next); setLabel(defaultLabel(next)); setInvalid(false); setGeneration((v) => v + 1); }} />
+    <form onSubmit={save}>
+    <section className="card setup-confirm"><h2>确认这一次，想怎么试</h2><div className="setup-overview">{fieldsFor(scene.business_type).filter((m) => fieldValue(scene, m.key, label).value != null).map((m) => { const f = fieldValue(scene, m.key, label); return <span key={m.key}>{m.label}：{m.money ? formatCents(f.value) : f.value} · {sourceNames[f.source]}</span>; })}</div>
+    <ScenarioSelect scene={scene} label={label} onChange={(next) => { setLabel(next); setInvalid(false); }} />
+    <p className="muted">{missing.length ? `还需要确认：${missing.join("、")}。可展开自己填写，或主动选择演示条件。` : "条件已齐，可以开始。进入场景后也能调整价格与备货。"}</p>
+    <div className="actions"><button type="button" className="secondary" onClick={() => { reset(scene.business_type, true); setExpanded(false); }}>用演示条件先试试</button><button type="button" className="secondary" onClick={() => setExpanded((v) => !v)}>{expanded ? "收起经营条件" : "自己填写或调整条件"}</button></div><p className="muted">演示数字不是你的真实成本、销量或调研结论。未知预算可留空。</p></section>
+    <details className="setup-collapsed" open={expanded} onToggle={(e) => setExpanded(e.currentTarget.open)}><summary>展开全部经营条件与来源</summary><div className="setup-grid"><section className="card"><h2>想怎么试一次？</h2>
       <label>经营方式<select value={scene.business_type} onChange={(e) => {
         if (window.confirm("切换经营方式会清空未保存的条件，要继续吗？")) reset(e.target.value as BusinessType, false);
       }}>{kinds.map((kind) => <option key={kind} value={kind}>{businessNames[kind]}</option>)}</select></label>
@@ -93,14 +101,15 @@ function Setup({ detail, example }: { detail: ProjectDetail; example?: BusinessT
       <p className="muted">地点未核实。是否允许经营、是否需要许可，请向现场管理方确认。</p>
       <label>这次预演的时间和费用范围<textarea rows={3} required value={scene.period_note} onChange={(e) => setScene({ ...scene, period_note: e.target.value })} /></label>
       <div className="message"><strong>不确定也没关系</strong><p>未知的成本可以先留空。只有在条件补齐后才会给出计算结果。</p></div>
-      <button type="button" className="secondary" onClick={() => reset(scene.business_type, true)}>用演示条件先试试</button>
+
       <p className="muted">演示数字不是你的真实成本或销量；加载后会保留清晰的“演示假设”标记。</p>
-    </section><section className="card"><h2>这一次，先定下这些条件</h2><ScenarioSelect scene={scene} label={label} onChange={(v) => { setLabel(v); setInvalid(false); }} />
+    </section><section className="card"><h2>这一次，先定下这些条件</h2>
       <SceneFields key={`${generation}-${label}`} scene={scene} label={label} onChange={setScene} onInvalid={setInvalid} />
+    </section></div></details>
       {action.error != null && <ErrorCard error={action.error} />}
       <p className="muted">点击下方按钮会保存独立方案；以后修改不会覆盖旧版本。</p>
-      <button disabled={invalid || action.pending || !scene.title.trim() || !scene.location.description.trim() || !scene.period_note.trim()}>{action.pending ? "正在保存……" : "确认这些条件，开始预演 →"}</button>
-    </section></form></>;
+      <button disabled={invalid || missing.length > 0 || action.pending || !scene.title.trim() || !scene.location.description.trim() || !scene.period_note.trim()}>{action.pending ? "正在保存……" : "确认这些条件，开始预演 →"}</button>
+    </form></>;
 }
 
 function Sandbox({ detail, version, initialRun }: { detail: ProjectDetail; version: Version; initialRun?: string }) {
@@ -256,6 +265,7 @@ function ProjectPage({ id, page, query }: { id: string; page: string; query: URL
     {resource.error ? <ErrorCard error={resource.error} retry={resource.reload} /> : !detail ? <Loading />
       : page === "setup" ? <Setup detail={detail} {...(example ? { example } : {})} />
       : !version ? <div className="empty"><h1>先准备一点条件</h1><p>保存场景后，就能亲手试一试了。</p><Link className="button" to={`/projects/${id}/setup`}>去准备场景</Link></div>
+      : page === "play" && version.scene.business_type === "retail_perishable" ? <SceneStage key={`${version.id}-${query.get("prepare")}`} detail={detail} version={version} fresh={query.get("prepare") === "1"} {...(query.get("agent_run") ? { initialRun: query.get("agent_run")! } : {})} />
       : page === "play" ? <Sandbox key={version.id} detail={detail} version={version} {...(query.get("agent_run") ? { initialRun: query.get("agent_run")! } : {})} />
       : page === "compare" ? <Compare detail={detail} /> : <Experiments detail={detail} />}
   </main>;
@@ -266,7 +276,7 @@ export default function App() {
   useEffect(() => { const update = () => setRoute(location.pathname + location.search); addEventListener("popstate", update); return () => removeEventListener("popstate", update); }, []);
   const [path = "/", search = ""] = route.split("?");
   const match = /^\/projects\/([^/]+)\/(setup|play|compare|experiment)$/.exec(path);
-  return <AppBoundary><a className="skip-link" href="#main">跳到主要内容</a><header className="site-header"><Link to="/" className="brand"><span className="brand-mark" aria-hidden="true">未</span><span>未开张<small>BEFORE OPEN</small></span></Link><nav aria-label="主导航"><Link to="/">试一个想法</Link><Link to="/projects">我的想法</Link><ModelConnector /></nav></header>
+  return <AppBoundary><a className="skip-link" href="#main">跳到主要内容</a><header className="site-header"><Link to="/" className="brand"><span className="brand-mark" aria-hidden="true">未</span><span>未开张<small>BEFORE OPEN</small></span></Link><nav aria-label="主导航"><Link to="/">试一个想法</Link><Link to="/projects">我的想法</Link></nav></header>
     {path === "/" ? <Home /> : path === "/projects" ? <Projects /> : match ? <ProjectPage key={route} id={decodeURIComponent(match[1]!)} page={match[2]!} query={new URLSearchParams(search)} />
       : <main id="main" className="page empty"><h1>这个页面还没有开张</h1><Link className="button" to="/">回到首页</Link></main>}
     <footer className="site-footer">未开张 Before Open <span>探索可能，而不制造确定性。</span></footer>

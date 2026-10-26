@@ -19,12 +19,15 @@ class Settings:
     agent_max_nodes: int = 8
     agent_max_calls: int = 6
     llm_timeout: float = 8.0
+    llm_shared_call_limit: int = 100
 
     def __post_init__(self) -> None:
         if "*" in self.allowed_origins:
             raise ValueError("ALLOWED_ORIGINS must contain explicit origins")
         if min(self.body_limit, self.rate_limit, self.session_days) < 1 or self.body_timeout <= 0:
             raise ValueError("runtime limits must be positive")
+        if self.llm_shared_call_limit < 0:
+            raise ValueError("shared model limit cannot be negative")
 
     @classmethod
     def load(cls) -> "Settings":
@@ -46,4 +49,5 @@ class Settings:
             llm_key=os.environ.get("BO_LLM_API_KEY"),
             llm_model=os.environ.get("BO_LLM_MODEL"),
             llm_base_url=os.environ.get("BO_LLM_BASE_URL", "https://api.openai.com/v1"),
+            llm_shared_call_limit=int(os.environ.get("BO_LLM_SHARED_CALL_LIMIT", "100")),
         )

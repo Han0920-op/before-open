@@ -62,7 +62,7 @@ def session(request: Request, response: Response, db: Db) -> Envelope[SessionVie
 @router.get("/ready", response_model=Envelope[dict[str, str]])
 def ready(request: Request, db: Db) -> Envelope[dict[str, str]]:
     revision = db.scalar(text("SELECT version_num FROM alembic_version"))
-    if revision != "0002":
+    if revision != "0003":
         raise DomainError(503, "DATABASE_NOT_READY", "数据库迁移尚未就绪")
     return envelope(request, {"database": "ok", "revision": revision})
 
