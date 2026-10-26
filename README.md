@@ -6,6 +6,8 @@
 
 **第一次在自己的电脑运行：请看 [快速启动教程](docs/QUICKSTART.md)**。包含克隆代码、准备工具、启动数据库及前后端的完整步骤，不依赖云环境目录。
 
+**Windows 一键启动：** 安装 uv、Node.js 24 和 Docker Desktop，打开 Docker 后双击根目录的 [`start.bat`](start.bat)。脚本自动准备依赖、启动数据库、迁移并启动前后端，就绪后打开浏览器；在同一窗口按 Ctrl+C 停止前后端。首次运行需联网，详细前置条件见快速启动教程。
+
 - [阶段 0 检查结果与技术决策](docs/DECISIONS.md)
 - [阶段 1 文件、数据模型和测试计划](docs/PHASE1_PLAN.md)
 - [阶段 1 实施结果与测试记录](docs/PHASE1_REPORT.md)

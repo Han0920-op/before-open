@@ -1,8 +1,22 @@
 # 第一次在自己的电脑运行
 
-这份说明适用于 macOS、Linux，以及 Windows 的 WSL2 终端。Windows 用户可使用 Docker Desktop，并在其设置里开启 WSL integration。以下命令不依赖云环境的 `/workspace` 路径。
+Windows 原生环境推荐使用下面的一键启动；后面的手动终端命令适用于 macOS、Linux，以及 Windows 的 WSL2 终端。以下说明不依赖云环境的 `/workspace` 路径。
 
 当前版本可以手动建立场景、经营试算、比较方案和记录现实观察，**手动使用不需要模型 API Key**。若要让 Agent 帮你准备场景，在页面顶部“模型接入”选择服务商、填写自己的 Key 并确认费用授权。真实模型可用性取决于服务权限、额度和网络；秒哒发布尚未验证。
+
+## Windows 一键启动（推荐）
+
+1. 安装 Windows 版 [uv](https://docs.astral.sh/uv/getting-started/installation/)、Node.js **24.x**（包含 npm）和 Docker Desktop；下载代码可使用 Git 或 GitHub 的 ZIP。
+2. 打开 Docker Desktop，等待引擎就绪，并使用 Linux containers。工具安装后重新打开终端或资源管理器，使 PATH 生效。
+3. 在仓库根目录双击 **`start.bat`**。也可在 CMD 输入 `start.bat`，或在 PowerShell 输入 `./start.bat`。
+
+脚本会通过 uv 准备 Python 3.12 和锁定的后端依赖；首次或前端依赖文件变化时执行 `npm ci`；启动或复用 PostgreSQL，执行数据库迁移，然后在**同一个终端窗口**启动前后端。首次运行需要联网下载 Python、依赖和数据库镜像，请等待。就绪后自动打开浏览器；若浏览器没有打开，访问终端显示的本机地址即可。
+
+使用期间保留这个窗口，结束时在窗口按 **Ctrl+C**。前后端会一起停止，数据库保留运行和数据。下次仍然只需打开 Docker Desktop 并双击 `start.bat`，无需手动开两个终端。
+
+脚本仅监听本机：前端 5173、后端 8001，Cookie 设置为本地 HTTP 开发模式。如端口被占用会停止并提示，不会强行结束已有服务。报错后窗口会暂停，方便查看原因。若进程环境已设置 `DATABASE_URL`，则跳过 Docker 并迁移该数据库；普通本地使用无需设置它。项目不自动读取 `.env`。
+
+保留 `.local/`、数据库容器和数据卷，勿通过删除它们来排错。Windows 原生与 WSL 的 Python 虚拟环境不同，请在同一份代码中固定使用一种运行方式。该脚本是本地开发入口，不是公网部署脚本。
 
 ## 1. 准备工具
 
@@ -79,7 +93,9 @@ npm run dev
 
 ## 下次如何启动
 
-不需要重新 clone 或重装依赖。先打开 Docker，在仓库根运行 `python3 scripts/dev_db.py`，然后分别启动第 4、5 步的两个终端。停止前后端时，在各自终端按 Ctrl+C。
+Windows 原生：打开 Docker Desktop，双击仓库根目录的 `start.bat`；在其窗口按 Ctrl+C 停止前后端。
+
+macOS / Linux / WSL 手动启动：不需要重新 clone 或重装依赖。先打开 Docker，在仓库根运行 `python3 scripts/dev_db.py`，然后分别启动第 4、5 步的两个终端。停止前后端时，在各自终端按 Ctrl+C。
 
 项目保存在本地 PostgreSQL，浏览器保存匿名访问凭据；请使用同一个浏览器。清理浏览器数据或更换设备可能无法找回原项目；不要把“清缓存”当作通用排错方式。
 
