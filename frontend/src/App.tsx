@@ -7,7 +7,6 @@ import type { BusinessType, Comparison, ProjectDetail, Scene, Summary, Version }
 import { AppBoundary, ErrorCard, Link, Loading, Results, ScenarioSelect, SceneFields,
   navigate, useAction, usePreview, useResource } from "./ui";
 
-import { AgentSetup, AgentAnalysis, ExperimentAssistant } from "./Agent";
 import { SceneStage } from "./scene/SceneStage";
 
 const kinds: BusinessType[] = ["retail_perishable", "retail_durable", "appointment_service"];
@@ -37,7 +36,7 @@ function Home() {
     <form onSubmit={start} className="idea-form"><label htmlFor="idea">你想试试什么？</label>
       <textarea id="idea" maxLength={10000} rows={4} required value={idea} onChange={(e) => { setIdea(e.target.value); setExample(undefined); }}
         placeholder="例如：我想在学校周末市集卖冰粉，预算 500 元。" />
-      <div className="form-footer"><span>说出想法，准备好条件就能亲手试营业。</span><button disabled={action.pending || !idea.trim()}>{action.pending ? "正在保存想法……" : "开始预演 →"}</button></div>
+      <div className="form-footer"><span>写下想法，选好经营方式和条件，就能亲手试营业。</span><button disabled={action.pending || !idea.trim()}>{action.pending ? "正在保存想法……" : "开始预演 →"}</button></div>
     </form>
     {action.error != null && <ErrorCard error={action.error} />}
     <div className="examples" aria-label="快速例子">{examples.map((e) => <button className="example" type="button" key={e.kind}
@@ -86,9 +85,8 @@ function Setup({ detail, example }: { detail: ProjectDetail; example?: BusinessT
   const missing = missingConditions(scene, label);
   return <><div className="page-title"><div><p className="eyebrow">先把条件摆在桌上</p><h1>准备你的专属场景</h1></div></div>
     <p className="idea-quote">“{detail.project.original_idea}”</p>
-    <AgentSetup project={detail.project.id} autoStart={!example && !latest} onUseScene={(next) => { setScene(next); setLabel(defaultLabel(next)); setInvalid(false); setGeneration((v) => v + 1); }} />
     <form onSubmit={save}>
-    <section className="card setup-confirm"><h2>确认这一次，想怎么试</h2><div className="setup-overview">{fieldsFor(scene.business_type).filter((m) => fieldValue(scene, m.key, label).value != null).map((m) => { const f = fieldValue(scene, m.key, label); return <span key={m.key}>{m.label}：{m.money ? formatCents(f.value) : f.value} · {sourceNames[f.source]}</span>; })}</div>
+    <section className="card setup-confirm"><h2>确认这一次，想怎么试</h2><p className="muted">这句话会保存为你的想法。当前版本由你选择经营方式、填写条件，不会自动解析或调用 AI。</p><div className="setup-overview">{fieldsFor(scene.business_type).filter((m) => fieldValue(scene, m.key, label).value != null).map((m) => { const f = fieldValue(scene, m.key, label); return <span key={m.key}>{m.label}：{m.money ? formatCents(f.value) : f.value} · {sourceNames[f.source]}</span>; })}</div>
     <ScenarioSelect scene={scene} label={label} onChange={(next) => { setLabel(next); setInvalid(false); }} />
     <p className="muted">{missing.length ? `还需要确认：${missing.join("、")}。可展开自己填写，或主动选择演示条件。` : "条件已齐，可以开始。进入场景后也能调整价格与备货。"}</p>
     <div className="actions"><button type="button" className="secondary" onClick={() => { reset(scene.business_type, true); setExpanded(false); }}>用演示条件先试试</button><button type="button" className="secondary" onClick={() => setExpanded((v) => !v)}>{expanded ? "收起经营条件" : "自己填写或调整条件"}</button></div><p className="muted">演示数字不是你的真实成本、销量或调研结论。未知预算可留空。</p></section>
@@ -112,7 +110,7 @@ function Setup({ detail, example }: { detail: ProjectDetail; example?: BusinessT
     </form></>;
 }
 
-function Sandbox({ detail, version, initialRun }: { detail: ProjectDetail; version: Version; initialRun?: string }) {
+function Sandbox({ detail, version }: { detail: ProjectDetail; version: Version }) {
   const [scene, setScene] = useState<Scene>(() => structuredClone(version.scene));
   const [label, setLabel] = useState(() => defaultLabel(scene));
   const [invalid, setInvalid] = useState(false);
@@ -137,7 +135,6 @@ function Sandbox({ detail, version, initialRun }: { detail: ProjectDetail; versi
     </section><div className="result-column">
       {!preview.ready ? <section className="empty"><span className="empty-icon" aria-hidden="true">✎</span><h2>还差一点条件，就能试算了</h2><p>{invalid ? "请先修正标红的输入。" : `请补充：${preview.missing.join("、")}`}</p><p className="muted">未知的数据会保持未知，不会替你猜一个答案。</p></section>
         : preview.error ? <ErrorCard error={preview.error} retry={preview.retry} /> : preview.value ? <Results calculation={preview.value} /> : <p className="loading" role="status">正在按这组条件试算……</p>}
-      <AgentAnalysis project={detail.project.id} version={version} label={defaultLabel(version.scene)} {...(initialRun ? { initialRun } : {})} />
       <section className="card next-step"><h2>下一步，找一个真实的人聊聊</h2><p>这里能算清条件，却不能替你知道别人会不会买。挑一个最不确定的点，到现实里问问看。</p><Link to={`/projects/${detail.project.id}/experiment`} className="text-link">准备一项现实挑战 →</Link></section>
     </div></div></>;
 }
@@ -228,7 +225,6 @@ function Experiments({ detail }: { detail: ProjectDetail }) {
     <div className="message">从一个小问题开始。先征得同意，不记录姓名或联系方式；小样本不能代表整个市场。</div>
     {notice && <p role="status" className="success">✓ {notice}</p>}
     <div className="experiment-grid"><form className="card" onSubmit={(e) => void createTask(e)}><h2>准备一项小挑战</h2>
-      <ExperimentAssistant project={detail.project.id} version={detail.versions.find((v) => v.id === versionId)!} onDraft={(q, m) => { setQuestion(q); setMethod(m); }} />
       <VersionSelector label="关联哪个方案" value={versionId} versions={detail.versions} onChange={setVersion} />
       <label>最想确认的一个问题<input required value={question} onChange={(e) => setQuestion(e.target.value)} maxLength={10000} placeholder="例如：这个价格，对方能接受吗？" /></label>
       <label>打算怎么了解<textarea required rows={4} value={method} onChange={(e) => setMethod(e.target.value)} maxLength={10000} placeholder="写下准备询问谁、如何征得同意，以及如何记录。" /></label>
@@ -265,8 +261,8 @@ function ProjectPage({ id, page, query }: { id: string; page: string; query: URL
     {resource.error ? <ErrorCard error={resource.error} retry={resource.reload} /> : !detail ? <Loading />
       : page === "setup" ? <Setup detail={detail} {...(example ? { example } : {})} />
       : !version ? <div className="empty"><h1>先准备一点条件</h1><p>保存场景后，就能亲手试一试了。</p><Link className="button" to={`/projects/${id}/setup`}>去准备场景</Link></div>
-      : page === "play" && version.scene.business_type === "retail_perishable" ? <SceneStage key={`${version.id}-${query.get("prepare")}`} detail={detail} version={version} fresh={query.get("prepare") === "1"} {...(query.get("agent_run") ? { initialRun: query.get("agent_run")! } : {})} />
-      : page === "play" ? <Sandbox key={version.id} detail={detail} version={version} {...(query.get("agent_run") ? { initialRun: query.get("agent_run")! } : {})} />
+      : page === "play" && version.scene.business_type === "retail_perishable" ? <SceneStage key={`${version.id}-${query.get("prepare")}`} detail={detail} version={version} fresh={query.get("prepare") === "1"} />
+      : page === "play" ? <Sandbox key={version.id} detail={detail} version={version} />
       : page === "compare" ? <Compare detail={detail} /> : <Experiments detail={detail} />}
   </main>;
 }

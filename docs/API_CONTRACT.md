@@ -118,3 +118,8 @@ PY
 过程写接口沿用 CSRF、Origin 和 Idempotency-Key。修订号0为已开摊、已记成本、尚未营业。相同请求同键重放原回复，换键提交过期修订号返回409 PROCESS_REVISION_CONFLICT，需读取最新状态。过程步骤只追加，每一状态从保存的快照复算校验，终态与原公式对账。跨用户返回404。金额仍为整数分。
 
 ProcessView在完成前calculation=null，完成后提供关联的权威快照；累计收入不可解释为利润。类型继续由OpenAPI生成。
+
+
+## 2026-10-27：AI暂缓
+
+当前所有agent_routes接口默认返回503 AI_FEATURE_DEFERRED，不解析模型凭据、不创建Agent任务、不请求服务商。原有OpenAPI契约保留作扩展参考。BO_LLM_ENABLED及旧密钥不能单独开启扩展；ai_features_enabled默认false且不从环境读取，保留测试通过显式Settings选择启用。经营、版本、过程、手动任务与观察接口不受影响。

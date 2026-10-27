@@ -1,6 +1,6 @@
 [project]
 name = "before-open-backend"
-version = "0.5.0"
+version = "0.5.1"
 description = "未开张 Before Open：确定性经营推演与业务 API"
 requires-python = ">=3.12,<3.13"
 dependencies = [

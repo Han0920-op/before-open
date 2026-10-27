@@ -46,7 +46,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or Settings.load()
     app = FastAPI(
         title="未开张 Before Open",
-        version="0.5.0",
+        version="0.5.1",
         responses={
             status: {"model": ErrorEnvelope}
             for status in (400, 401, 403, 404, 408, 409, 413, 422, 429, 500, 503)

@@ -254,7 +254,7 @@ def main() -> None:
     parser.add_argument(
         "--agent",
         action="store_true",
-        help="isolated scripted-model Agent UI test, no real provider",
+        help="verify AI is deferred, including when legacy model settings exist",
     )
     args = parser.parse_args()
     url = Settings.load().database_url
@@ -362,7 +362,7 @@ def main() -> None:
             "count": len(results),
             "database": "isolated PostgreSQL schema",
             "build": "production" if args.production else "development",
-            "model_transport": "scripted_test_not_real_provider"
+            "model_transport": "deferred_no_model_calls"
             if args.agent
             else "not_used",
             "screenshots": str(ARTIFACTS),

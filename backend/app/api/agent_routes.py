@@ -1,6 +1,6 @@
 from typing import Any
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 
 from app.agent import service
@@ -23,7 +23,13 @@ from app.schemas.api import Envelope
 from app.schemas.process import AssistantStatus
 from app.services import business
 
-router = APIRouter(prefix="/api/v1")
+
+def require_ai_extension(request: Request) -> None:
+    if not request.app.state.settings.ai_features_enabled:
+        raise DomainError(503, "AI_FEATURE_DEFERRED", "AI能力暂未开放，可直接使用场景与经营推演")
+
+
+router = APIRouter(prefix="/api/v1", dependencies=[Depends(require_ai_extension)])
 
 
 @router.get("/assistant-status", response_model=Envelope[AssistantStatus])

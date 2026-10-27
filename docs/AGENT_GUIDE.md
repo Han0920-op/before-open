@@ -1,4 +1,6 @@
-# 默认智能服务与 ScenarioAgent
+# AI 扩展参考：默认服务与 ScenarioAgent
+
+> 2026-10-27：用户决定暂不接入AI。本页保留历史实现和未来扩展参考，当前普通页面无AI入口，后端统一返回 AI_FEATURE_DEFERRED；只配置 BO_LLM_* 不会开启扩展。测试通过显式 Settings(ai_features_enabled=True) 保留回归，生产启动配置不从环境读取此开关。参见[当前范围](AI_DEFERRED.md)。
 
 适用版本：0.5.0。普通用户无需填写 API Key 或选择模型；原接入接口保留兼容，普通导航不提供配置表单。
 

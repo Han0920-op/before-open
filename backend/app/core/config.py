@@ -12,6 +12,8 @@ class Settings:
     body_timeout: float = 10.0
     rate_limit: int = 120
     session_days: int = 30
+    # Deferred product extension. Deliberately not activated by model environment variables.
+    ai_features_enabled: bool = False
     llm_enabled: bool = False
     llm_key: str | None = field(default=None, repr=False)
     llm_model: str | None = None

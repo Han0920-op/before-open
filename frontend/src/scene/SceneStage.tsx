@@ -4,13 +4,12 @@ import { defaultLabel, demandMeta, fieldValue, fieldsFor, setValue } from "../li
 import { formatCents } from "../lib/money";
 import type { ProcessView, ProjectDetail, Scene, Version } from "../lib/types";
 import { ErrorCard, Link, Loading, NumberField, Results, ScenarioSelect, navigate, useAction, usePreview, useResource } from "../ui";
-import { AgentAnalysis } from "../Agent";
 import "./scene.css";
 
 type Focus = "price" | "stock" | "conditions";
 
-export function SceneStage({ detail, version, fresh, initialRun }: {
-  detail: ProjectDetail; version: Version; fresh: boolean; initialRun?: string;
+export function SceneStage({ detail, version, fresh }: {
+  detail: ProjectDetail; version: Version; fresh: boolean;
 }) {
   const [scene, setScene] = useState<Scene>(() => structuredClone(version.scene));
   const [label, setLabel] = useState(() => defaultLabel(version.scene));
@@ -113,7 +112,7 @@ export function SceneStage({ detail, version, fresh, initialRun }: {
         {current?.budget_balance_cents != null && <p>按已填预算与本轮收支计算，手头剩余：{formatCents(current.budget_balance_cents)}。这不是利润。</p>}
       </details>}
       {completed && run?.calculation && <><section className="card closing-note"><p className="eyebrow">收摊后，想明白一件事</p><h2>今天这个选择，带来了什么？</h2><p>本轮售出 {current?.sold} 份，剩余 {stock} 份。按这批未售商品无法保留的假设，整批成本已发生。</p><div className="actions"><Link to={`/projects/${detail.project.id}/compare`}>比较两个方案 →</Link><Link to={`/projects/${detail.project.id}/experiment`}>去现实里验证一个条件 →</Link></div></section><Results calculation={run.calculation}/>
-        <AgentAnalysis project={detail.project.id} version={version} label={run.scenario_label} {...(initialRun ? { initialRun } : {})}/></>}
+        </>}
     </section>
     <aside className="scene-sidebar">
       {editing ? <section className="card opening-card"><p className="eyebrow">先准备，再开摊</p><h2>这一次，想怎么试？</h2><p>点场景中的价签和备货箱修改条件，也可以直接使用已确认的条件。</p>

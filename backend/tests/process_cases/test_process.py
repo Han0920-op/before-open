@@ -204,6 +204,7 @@ def test_shared_model_ceiling_is_atomic_and_bounded() -> None:
 def test_assistant_status_exposes_no_configuration(client: TestClient, api: FastAPI) -> None:
     from dataclasses import replace
 
+    api.state.settings = replace(api.state.settings, ai_features_enabled=True)
     response = client.get("/api/v1/assistant-status").json()["data"]
     assert not response["available"]
     api.state.settings = replace(
@@ -217,3 +218,70 @@ def test_assistant_status_exposes_no_configuration(client: TestClient, api: Fast
     assert "fixture" not in status.text and "api_key" not in status.text
     api.state.shared_model_budget = SharedModelBudget(0)
     assert not client.get("/api/v1/assistant-status").json()["data"]["available"]
+
+
+def test_ai_deferred_even_with_legacy_credentials(
+    client: TestClient, api: FastAPI, scene_data: Callable[[str], dict[str, Any]]
+) -> None:
+    from dataclasses import replace
+
+    # Old deployment credentials must not turn the postponed product extension back on.
+    api.state.settings = replace(
+        api.state.settings, llm_enabled=True, llm_key="fixture-only", llm_model="fixture-only"
+    )
+    calls: list[str] = []
+
+    def forbidden_model(actor: str) -> None:
+        calls.append(actor)
+        raise AssertionError("deferred AI must never resolve a model")
+
+    api.state.agent_model_factory = forbidden_model
+    project, version = setup_scene(client, scene_data("retail_perishable"))
+    run = str(uuid4())
+    routes: list[tuple[str, str, object]] = [
+        ("GET", "/models", None),
+        ("GET", "/assistant-status", None),
+        (
+            "POST",
+            "/model-connection",
+            {
+                "provider": "deepseek",
+                "model": "deepseek-chat",
+                "api_key": "fixture-only-key",
+                "authorize_paid_calls": True,
+            },
+        ),
+        ("POST", "/model-connection/disconnect", {}),
+        ("POST", f"/projects/{project}/scene-draft", {}),
+        (
+            "POST",
+            f"/projects/{project}/clarifications",
+            {"run_id": run, "answers": {}, "use_demo_assumptions": False},
+        ),
+        ("POST", f"/projects/{project}/agent-confirm", {"run_id": run, "confirmed": True}),
+        (
+            "POST",
+            f"/projects/{project}/agent-runs",
+            {"scene_version_id": version, "scenario_label": "low"},
+        ),
+        (
+            "POST",
+            f"/projects/{project}/agent-runs/{run}/actions",
+            {"action_id": "fixture", "confirmed": True},
+        ),
+        ("POST", f"/projects/{project}/agent-retry", {"run_id": run, "confirmed": True}),
+        (
+            "POST",
+            f"/projects/{project}/experiment-draft",
+            {"scene_version_id": version, "scenario_label": "low"},
+        ),
+    ]
+    for index, (method, path, body) in enumerate(routes):
+        response = client.request(
+            method, "/api/v1" + path, json=body, headers={"Idempotency-Key": f"deferred-{index}"}
+        )
+        assert response.status_code == 503, (path, response.text)
+        assert response.json()["error"]["code"] == "AI_FEATURE_DEFERRED"
+    assert not calls
+    # The retained calculator still works with AI fully unavailable.
+    assert post(client, f"/scene-versions/{version}/simulate", {"scenario_label": "low"})

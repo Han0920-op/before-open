@@ -5,7 +5,6 @@ from dataclasses import replace
 
 from app.core.config import Settings
 from app.main import create_app
-from tests.agent_cases.test_workflow import ScriptModel
 
 if os.environ.get("BEFORE_OPEN_AGENT_TEST") != "1":
     raise RuntimeError("This server entry point is for isolated browser tests only")
@@ -18,4 +17,10 @@ app = create_app(
         llm_model="scripted-test",
     )
 )
-app.state.agent_model_factory = lambda actor: ScriptModel()
+
+
+def forbidden_model(actor: str) -> None:
+    raise AssertionError("Deferred browser flow must not request a model")
+
+
+app.state.agent_model_factory = forbidden_model
